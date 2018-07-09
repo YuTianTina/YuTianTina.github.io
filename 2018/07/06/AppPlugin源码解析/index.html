@@ -102,7 +102,7 @@
 <meta property="og:site_name" content="天晴日无风">
 <meta property="og:description" content="之前为了优化内部的Route, 去看了下TransformAPI, 为了了解TransformAPI的执行顺序, 就看了下AppPlugin的源码.本篇源码基于android gradle 3.0.1的版本.">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2018-07-06T10:03:42.517Z">
+<meta property="og:updated_time" content="2018-07-09T01:31:04.999Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="AppPlugin源码解析">
 <meta name="twitter:description" content="之前为了优化内部的Route, 去看了下TransformAPI, 为了了解TransformAPI的执行顺序, 就看了下AppPlugin的源码.本篇源码基于android gradle 3.0.1的版本.">
@@ -417,6 +417,28 @@
 <li>根据variant创建对应的tasks</li>
 </ol>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">createAndroidTasks</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        variantFactory.validateModel(<span class="keyword">this</span>);</span><br><span class="line">        <span class="comment">// 校验是否引用apt插件, 如果有, 抛出异常</span></span><br><span class="line">        variantFactory.preVariantWork(project);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">final</span> TaskFactory tasks = <span class="keyword">new</span> TaskContainerAdaptor(project.getTasks());</span><br><span class="line">        <span class="keyword">if</span> (variantScopes.isEmpty()) &#123;</span><br><span class="line">            recorder.record(</span><br><span class="line">                    ExecutionType.VARIANT_MANAGER_CREATE_VARIANTS,</span><br><span class="line">                    project.getPath(),</span><br><span class="line">                    <span class="keyword">null</span> <span class="comment">/*variantName*/</span>,</span><br><span class="line">                    <span class="comment">// 填充所有variant</span></span><br><span class="line">                    <span class="keyword">this</span>::populateVariantDataList);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// Create top level test tasks.</span></span><br><span class="line">        recorder.record(</span><br><span class="line">                ExecutionType.VARIANT_MANAGER_CREATE_TESTS_TASKS,</span><br><span class="line">                project.getPath(),</span><br><span class="line">                <span class="keyword">null</span> <span class="comment">/*variantName*/</span>,</span><br><span class="line">                <span class="comment">// 创建测试tasks</span></span><br><span class="line">                () -&gt; taskManager.createTopLevelTestTasks(tasks, !productFlavors.isEmpty()));</span><br><span class="line"></span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">final</span> VariantScope variantScope : variantScopes) &#123;</span><br><span class="line">            recorder.record(</span><br><span class="line">                    ExecutionType.VARIANT_MANAGER_CREATE_TASKS_FOR_VARIANT,</span><br><span class="line">                    project.getPath(),</span><br><span class="line">                    variantScope.getFullVariantName(),</span><br><span class="line">                    <span class="comment">// 根据variant创建不同的tasks, 创建assemble任务也在这里</span></span><br><span class="line">                    () -&gt; createTasksForVariantData(tasks, variantScope));</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        taskManager.createReportTasks(tasks, variantScopes);</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><p>最后我们总结下, <code>appPlugin</code> <code>apply</code>的整体流程(当然, 因为他执行的是父类的<code>apply</code>, 所以流程适用于<code>libraryPlugin</code>)</p>
+<ol>
+<li>project的配置<ol>
+<li>检验gradle版本</li>
+<li>下载dependence</li>
+<li>构建<code>androidBuilder</code></li>
+<li>引用<code>JavaBasePlugin</code>和<code>JacocoPlugin</code></li>
+<li>定义编译过程的回调, 负责处理dex-cache的加载和清除工作</li>
+</ol>
+</li>
+<li>extension的配置<ol>
+<li>创建和配置extension</li>
+<li>创建taskManager和variantManager</li>
+<li>配置签名设置, buildType, productFlavor, 供后续task以及编译时使用</li>
+</ol>
+</li>
+<li>创建task(任务)<ol>
+<li>一些extension设置的检验</li>
+<li>编译task的创建</li>
+</ol>
+</li>
+</ol>
 
       
     </div>
@@ -606,7 +628,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#总入口"><span class="nav-number">1.</span> <span class="nav-text">总入口</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#configureProject"><span class="nav-number">2.</span> <span class="nav-text">configureProject</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#configureExtension"><span class="nav-number">3.</span> <span class="nav-text">configureExtension</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#createTasks"><span class="nav-number">4.</span> <span class="nav-text">createTasks</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#总入口"><span class="nav-number">1.</span> <span class="nav-text">总入口</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#configureProject"><span class="nav-number">2.</span> <span class="nav-text">configureProject</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#configureExtension"><span class="nav-number">3.</span> <span class="nav-text">configureExtension</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#createTasks"><span class="nav-number">4.</span> <span class="nav-text">createTasks</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#总结"><span class="nav-number">5.</span> <span class="nav-text">总结</span></a></li></ol></div>
             
 
           </div>
