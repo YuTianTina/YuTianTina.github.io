@@ -2,9 +2,16 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
+    <loc>//litten.me/2018/08/29/OkHttp%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90(%E4%B8%89)-CallServerInterceptor/</loc>
+    
+    <lastmod>2018-08-29T12:36:46.418Z</lastmod>
+    
+  </url>
+  
+  <url>
     <loc>//litten.me/2018/08/24/okHttp%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90(%E4%BA%8C)-ConnectInterceptor/</loc>
     
-    <lastmod>2018-08-24T13:34:42.121Z</lastmod>
+    <lastmod>2018-08-24T13:37:13.854Z</lastmod>
     
   </url>
   
