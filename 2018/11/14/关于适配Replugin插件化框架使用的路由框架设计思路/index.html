@@ -78,7 +78,7 @@
 <link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
 
 
-  <meta name="keywords" content="android," />
+  <meta name="keywords" content="android,路由," />
 
 
 
@@ -94,18 +94,20 @@
 
 
 
-<meta name="description" content="前言看到目前项目里用到蛮多枚举, 才有了这篇小文章分享 为什么使用Enumjava中的Enum是包含固定常量集的数据类型.当我们需要预定义一组代表某种数据的值时一般都会使用枚举, 而当要保证类型安全时, 我们经常会使用Enum。 比如, 当我们要保证常量使用正常时, 我们经常使用Enum在编译时校验确保类型安全">
-<meta name="keywords" content="android">
+<meta name="description" content="前言公司有内部开发的路由框架, 为了可适配Replugin插件化框架, 当前的路由框架肯定是不能使用的, 由于闭源情况, 这里主要讲下改造的思路">
+<meta name="keywords" content="android,路由">
 <meta property="og:type" content="article">
-<meta property="og:title" content="Enum的正确使用方式">
-<meta property="og:url" content="//litten.me/2017/12/26/Enum的正确使用方式/index.html">
+<meta property="og:title" content="关于适配Replugin插件化框架的使用">
+<meta property="og:url" content="//litten.me/2018/11/14/关于适配Replugin插件化框架使用的路由框架设计思路/index.html">
 <meta property="og:site_name" content="天晴日无风">
-<meta property="og:description" content="前言看到目前项目里用到蛮多枚举, 才有了这篇小文章分享 为什么使用Enumjava中的Enum是包含固定常量集的数据类型.当我们需要预定义一组代表某种数据的值时一般都会使用枚举, 而当要保证类型安全时, 我们经常会使用Enum。 比如, 当我们要保证常量使用正常时, 我们经常使用Enum在编译时校验确保类型安全">
+<meta property="og:description" content="前言公司有内部开发的路由框架, 为了可适配Replugin插件化框架, 当前的路由框架肯定是不能使用的, 由于闭源情况, 这里主要讲下改造的思路">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2018-05-07T02:02:07.486Z">
+<meta property="og:image" content="//litten.me/2018/11/14/关于适配Replugin插件化框架使用的路由框架设计思路/replugin.jpg">
+<meta property="og:updated_time" content="2018-11-14T08:52:57.763Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Enum的正确使用方式">
-<meta name="twitter:description" content="前言看到目前项目里用到蛮多枚举, 才有了这篇小文章分享 为什么使用Enumjava中的Enum是包含固定常量集的数据类型.当我们需要预定义一组代表某种数据的值时一般都会使用枚举, 而当要保证类型安全时, 我们经常会使用Enum。 比如, 当我们要保证常量使用正常时, 我们经常使用Enum在编译时校验确保类型安全">
+<meta name="twitter:title" content="关于适配Replugin插件化框架的使用">
+<meta name="twitter:description" content="前言公司有内部开发的路由框架, 为了可适配Replugin插件化框架, 当前的路由框架肯定是不能使用的, 由于闭源情况, 这里主要讲下改造的思路">
+<meta name="twitter:image" content="//litten.me/2018/11/14/关于适配Replugin插件化框架使用的路由框架设计思路/replugin.jpg">
 
 
 
@@ -134,13 +136,13 @@
 
 
 
-  <link rel="canonical" href="//litten.me/2017/12/26/Enum的正确使用方式/"/>
+  <link rel="canonical" href="//litten.me/2018/11/14/关于适配Replugin插件化框架使用的路由框架设计思路/"/>
 
 
 
 
 
-  <title>Enum的正确使用方式 | 天晴日无风</title>
+  <title>关于适配Replugin插件化框架的使用 | 天晴日无风</title>
   
 
 
@@ -292,7 +294,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="//litten.me/2017/12/26/Enum的正确使用方式/">
+    <link itemprop="mainEntityOfPage" href="//litten.me/2018/11/14/关于适配Replugin插件化框架使用的路由框架设计思路/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="天晴日无风">
@@ -309,7 +311,7 @@
 
         
         
-          <h1 class="post-title" itemprop="name headline">Enum的正确使用方式</h1>
+          <h1 class="post-title" itemprop="name headline">关于适配Replugin插件化框架的使用</h1>
         
 
         <div class="post-meta">
@@ -321,8 +323,8 @@
               
                 <span class="post-meta-item-text">发表于</span>
               
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-12-26T00:00:00+08:00">
-                2017-12-26
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-11-14T00:00:00+08:00">
+                2018-11-14
               </time>
             
 
@@ -344,8 +346,8 @@
               
               
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/android学习记录/" itemprop="url" rel="index">
-                    <span itemprop="name">android学习记录</span>
+                  <a href="/categories/日常开发踩坑记录/" itemprop="url" rel="index">
+                    <span itemprop="name">日常开发踩坑记录</span>
                   </a>
                 </span>
 
@@ -381,29 +383,34 @@
       
 
       
-        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>看到目前项目里用到蛮多枚举, 才有了这篇小文章分享</p>
-<h2 id="为什么使用Enum"><a href="#为什么使用Enum" class="headerlink" title="为什么使用Enum"></a>为什么使用Enum</h2><p>java中的Enum是包含固定常量集的数据类型.当我们需要预定义一组代表某种数据的值时一般都会使用枚举, 而当要保证类型安全时, 我们经常会使用Enum。</p>
-<p>比如, 当我们要保证常量使用正常时, 我们经常使用Enum在编译时校验确保类型安全<br><a id="more"></a></p>
-<h2 id="使用Enum的缺点"><a href="#使用Enum的缺点" class="headerlink" title="使用Enum的缺点"></a>使用Enum的缺点</h2><p>在<a href="https://developer.android.com/topic/performance/memory.html?hl=zh-cn" target="_blank" rel="noopener">Android开发者官网</a>上, 有这样一段话</p>
-<blockquote>
-<p>enums often require more than twice as much memory as static constants. You should strictly avoid using enums on Android.</p>
-</blockquote>
-<p>Enum中的每个值都是一个对象,每个声明都将使用一些运行时内存来简单引用该对象,所以Enum相较于static int会<code>占用更多的内存</code>.</p>
-<p>另外添加单个Enum将<code>增加最终DEX文件的大小</code>（是static int的<strong>13</strong>倍）.</p>
-<h2 id="解决方案"><a href="#解决方案" class="headerlink" title="解决方案"></a>解决方案</h2><p>Google提供了<a href="https://developer.android.com/studio/write/annotations.html#enum-annotations" target="_blank" rel="noopener">注解库</a>通过<code>Typedef</code>协助我们解决了Enum的问题,它可以确保特定参数, 返回值或字段引用特定的常量集,还可以完成代码以自动提供允许的常量.</p>
-<p>我们可以通过使用<code>@IntDef</code>和<code>@StringDef</code>来帮助我们在编译时检查像Enum这项的变量赋值.</p>
-<h2 id="使用姿势"><a href="#使用姿势" class="headerlink" title="使用姿势"></a>使用姿势</h2><ol>
-<li><p>首先我们需要依赖注解库</p>
-<figure class="highlight groovy"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">dependencies &#123;compile <span class="string">'com.android.support:support-annotations:24.2.0'</span>&#125;</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>直接上代码了, 因为还是蛮简单的</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Person</span> </span>&#123;</span><br><span class="line">        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">int</span> MALE = <span class="number">0</span>;</span><br><span class="line">        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">int</span> FEMALE = <span class="number">1</span>;</span><br><span class="line">        <span class="keyword">private</span>  <span class="keyword">int</span> sex;</span><br><span class="line">        <span class="function"><span class="keyword">public</span> String <span class="title">getSexValue</span><span class="params">()</span></span>&#123;</span><br><span class="line">            <span class="keyword">if</span>(MALE == sex)&#123;</span><br><span class="line">                <span class="keyword">return</span> <span class="string">"男"</span>;</span><br><span class="line">            &#125;<span class="keyword">else</span> <span class="keyword">if</span>(FEMALE == sex)&#123;</span><br><span class="line">                <span class="keyword">return</span> <span class="string">"女"</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">return</span> <span class="string">""</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">setSex</span><span class="params">(@sexDef <span class="keyword">int</span> sex)</span> </span>&#123;</span><br><span class="line">            <span class="keyword">this</span>.sex = sex;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">//  定义该注解被保留的时间长短</span></span><br><span class="line">        <span class="comment">//  RetentionPolicy.CLASS      注解被保留到class文件, 但jvm加载class文件时候被遗弃, 这是默认生命周期; 用于在编译时进行一些预处理操作, 比如生成一些辅助代码(ButterKnife)</span></span><br><span class="line">        <span class="comment">//  RetentionPolicy.RUNTIME    注解不仅被保存到class文件中, jvm加载class文件之后, 仍然存在;用于在运行时去动态获取注解信息</span></span><br><span class="line">        <span class="comment">//  RetentionPolicy.SOURCE      注解只保留在源文件, 当Java文件编译成class文件的时候, 注解被遗弃; 用于做一些检查性操作</span></span><br><span class="line">        <span class="meta">@Retention</span>(RetentionPolicy.SOURCE)</span><br><span class="line">        <span class="comment">//  使用@IntDef定义声明常量作为枚举</span></span><br><span class="line">        <span class="meta">@IntDef</span>(&#123;MALE, FEMALE&#125;)</span><br><span class="line">        <span class="comment">//  使用@interface声明新的枚举注解类型</span></span><br><span class="line">        <span class="keyword">public</span> <span class="meta">@interface</span> sexDef&#123;&#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>当我们调用setSex设置性别的时候, 如果输入非指定类型, 则编译不会通过</p>
-</li>
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>公司有内部开发的路由框架, 为了可适配Replugin插件化框架, 当前的路由框架肯定是不能使用的, 由于闭源情况, 这里主要讲下改造的思路<br><a id="more"></a></p>
+<h2 id="原路由设计思路以及主要问题"><a href="#原路由设计思路以及主要问题" class="headerlink" title="原路由设计思路以及主要问题"></a>原路由设计思路以及主要问题</h2><p>以<code>ARouter</code>为例, 他的设计仅服务于组件化架构项目, 各模块通过APT收集路由信息,APP壳(应用壳)通过反射或者通过TranslateAPI + ASM技术进行动态注册路由映射表, (具体可参考之前的<a href="https://yutiantina.github.io/2018/05/18/ARouter%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90/" target="_blank" rel="noopener">ARouter源码解析</a>)</p>
+<p>我们内部的路由大体的设计原理也差不多如上. 显而易见, 当要接入<code>Replugin</code>的时候, 会出现以下几个问题:</p>
+<ol>
+<li><code>Replugin</code>当跨插件调用组件的时候(譬如Activity跳转), 携带的<code>Intent</code>需要设置<code>ComponentName</code>(参见<a href="https://github.com/Qihoo360/RePlugin/wiki/%E6%8F%92%E4%BB%B6%E7%9A%84%E7%BB%84%E4%BB%B6" target="_blank" rel="noopener">Replugin Wiki 组件的调用</a>), 那么我们在匹配到对应路由的进行页面跳转的时候, 启动方式需要一定的变动.</li>
 </ol>
-<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>与普通static常量相比, Enum的使用至少为整个apk添加至少两倍以上的字节数，并且使用5到10倍的RAM内存。所以建议尽量避免使用Enum, 当需要使用上述特性时,建议以@IntDef 或 @StringDef 替代使用。</p>
-<p>更多的可以看看[The price of ENUMs][<a href="https://www.youtube.com/watch?v=Hzs6OBcvNQE&amp;feature=youtu.be]视频" target="_blank" rel="noopener">https://www.youtube.com/watch?v=Hzs6OBcvNQE&amp;feature=youtu.be]视频</a>, 需科学上网</p>
+<p>插件调用插件的组件, 有三种方法</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 插件调用插件的组件</span></span><br><span class="line"><span class="comment">// 方法1（最“单品”）</span></span><br><span class="line">Intent intent = <span class="keyword">new</span> Intent();</span><br><span class="line">intent.setComponent(<span class="keyword">new</span> ComponentName(<span class="string">"demo2"</span>,</span><br><span class="line">    <span class="string">"com.qihoo360.replugin.sample.demo2.databinding.DataBindingActivity"</span>));</span><br><span class="line">context.startActivity(intent);</span><br><span class="line"></span><br><span class="line"><span class="comment">// 方法2（快速创建Intent）</span></span><br><span class="line">Intent intent = RePlugin.createIntent(<span class="string">"demo2"</span>,</span><br><span class="line">    <span class="string">"com.qihoo360.replugin.sample.demo2.databinding.DataBindingActivity"</span>);</span><br><span class="line">context.startActivity(intent);</span><br><span class="line"></span><br><span class="line"><span class="comment">// 方法3（一行搞定）</span></span><br><span class="line">RePlugin.startActivity(v.getContext(), <span class="keyword">new</span> Intent(), <span class="string">"demo2"</span>,</span><br><span class="line">    <span class="string">"com.qihoo360.replugin.sample.demo2.databinding.DataBindingActivity"</span>);</span><br></pre></td></tr></table></figure>
+<p>宿主调用插件的组件, 必须使用Replugin的<code>startActvity</code>API<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">RePlugin.startActivity(MainActivity.<span class="keyword">this</span>, RePlugin.createIntent(<span class="string">"demo1"</span>,</span><br><span class="line">    <span class="string">"com.qihoo360.replugin.sample.demo1.MainActivity"</span>));</span><br></pre></td></tr></table></figure></p>
+<ol>
+<li>由于<code>Replugin</code>宿主和插件使用不同的ClassLoader, 变相导致插件和宿主的代码级隔离, 所以常用的通过反射or使用ASM获取路由映射表动态注册的方式就无法解决.</li>
+</ol>
+<h2 id="一版改造设计思路"><a href="#一版改造设计思路" class="headerlink" title="一版改造设计思路"></a>一版改造设计思路</h2><p>原来参考网上的资料, 是考量各插件维护自身的路由映射表, 当宿主动态加载插件的时候, 主动启动插件, 路由框架提供远程服务通过AIDL通信实现各插件的路由可以共享, 而关于组件的跳转, 将其抽象有外部业务项目初始化时进行实现. 具体思路流程可看下图<br><img src="./replugin.jpg" alt="一版设计思路"><br>但是这样又有两个问题出现了:</p>
+<ol>
+<li>通过AIDL传输路由, 存在一定的性能消耗</li>
+<li>另外很重要的一个问题是, 目前内部路由存在路由协议无法与对应页面所在插件匹配的情况下, 那么, 当宿主或者插件需要根据对应的路由跳转到对应的插件下组件的时候, 从路由信息上是无法获取需要启动哪个插件</li>
+</ol>
+<p>基于此, 我们走了另外一个方向</p>
+<h2 id="当前适配插件化路由设计思路"><a href="#当前适配插件化路由设计思路" class="headerlink" title="当前适配插件化路由设计思路"></a>当前适配插件化路由设计思路</h2><p>由于上文的问题, 最终决定不沿用参考文中的动态路由加载的方案, 而改为将路由表都由宿主来统一管理. 那么这样也可以排除掉了当路由无法找到的时候, 需要去判断是目标插件未启动or未down的情况(针对内置插件的情况).<br>主要思路如下:</p>
+<ol>
+<li>插件在编译期通过APT收集路由信息, 生成JSON文件, 放在assets中</li>
+<li>针对内置插件, 插件放入宿主的assets/plugins文件夹后, 参考Replugin的宿主gradle plugin的做法, 解析插件获取插件资源内的路由表, copy到宿主的assets中, 由宿主进行维护; 而针对外置插件, 需要插件上传时配合上传路由表, 宿主在初始化的时候可以请求服务端获取到外置插件的路由(关于外置插件路由获取方案目前只是设想, 由于当前的需求环境, 所以并未去实现)</li>
+<li>宿主在初始化的时候, 获取路由json, 解析保存在内存中.</li>
+</ol>
+<p>那么按以上流程, 路由需要做的工作, 主要就存在于原来annotation处理的逻辑修改和plugin的修改上, 相对来说, 改动点不大.</p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ol>
+<li><a href="https://juejin.im/post/5a7a9e9a6fb9a06332299210#comment" target="_blank" rel="noopener">Router: 教你如何进行任意插件化环境下的路由适配</a></li>
+</ol>
 
       
     </div>
@@ -423,6 +430,8 @@
           
             <a href="/tags/android/" rel="tag"># android</a>
           
+            <a href="/tags/路由/" rel="tag"># 路由</a>
+          
         </div>
       
 
@@ -434,8 +443,8 @@
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
-              <a href="/2017/12/22/Glide源码解析1/" rel="next" title="Glide源码解析">
-                <i class="fa fa-chevron-left"></i> Glide源码解析
+              <a href="/2018/08/29/OkHttp源码解析(三)-CallServerInterceptor/" rel="next" title="okHttp3源码解析(三)-CallServerInterceptor">
+                <i class="fa fa-chevron-left"></i> okHttp3源码解析(三)-CallServerInterceptor
               </a>
             
           </div>
@@ -443,10 +452,6 @@
           <span class="post-nav-divider"></span>
 
           <div class="post-nav-prev post-nav-item">
-            
-              <a href="/2018/01/12/谈谈GC和引用/" rel="prev" title="谈谈GC和引用">
-                谈谈GC和引用 <i class="fa fa-chevron-right"></i>
-              </a>
             
           </div>
         </div>
@@ -595,7 +600,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#为什么使用Enum"><span class="nav-number">2.</span> <span class="nav-text">为什么使用Enum</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#使用Enum的缺点"><span class="nav-number">3.</span> <span class="nav-text">使用Enum的缺点</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#解决方案"><span class="nav-number">4.</span> <span class="nav-text">解决方案</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#使用姿势"><span class="nav-number">5.</span> <span class="nav-text">使用姿势</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">6.</span> <span class="nav-text">总结</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#原路由设计思路以及主要问题"><span class="nav-number">2.</span> <span class="nav-text">原路由设计思路以及主要问题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#一版改造设计思路"><span class="nav-number">3.</span> <span class="nav-text">一版改造设计思路</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#当前适配插件化路由设计思路"><span class="nav-number">4.</span> <span class="nav-text">当前适配插件化路由设计思路</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考"><span class="nav-number">5.</span> <span class="nav-text">参考</span></a></li></ol></div>
             
 
           </div>
