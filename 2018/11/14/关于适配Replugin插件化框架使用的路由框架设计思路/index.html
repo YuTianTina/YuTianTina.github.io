@@ -94,19 +94,19 @@
 
 
 
-<meta name="description" content="前言公司有内部开发的路由框架, 为了可适配Replugin插件化框架, 当前的路由框架肯定是不能使用的, 由于闭源情况, 这里主要讲下改造的思路">
+<meta name="description" content="前言公司有内部开发的路由框架, 为了可适配Replugin插件化框架, 当前的路由框架肯定是不能使用的, 由于项目闭源, 这里主要讲下改造的思路">
 <meta name="keywords" content="android,路由">
 <meta property="og:type" content="article">
 <meta property="og:title" content="关于适配Replugin插件化框架的使用">
 <meta property="og:url" content="//litten.me/2018/11/14/关于适配Replugin插件化框架使用的路由框架设计思路/index.html">
 <meta property="og:site_name" content="天晴日无风">
-<meta property="og:description" content="前言公司有内部开发的路由框架, 为了可适配Replugin插件化框架, 当前的路由框架肯定是不能使用的, 由于闭源情况, 这里主要讲下改造的思路">
+<meta property="og:description" content="前言公司有内部开发的路由框架, 为了可适配Replugin插件化框架, 当前的路由框架肯定是不能使用的, 由于项目闭源, 这里主要讲下改造的思路">
 <meta property="og:locale" content="zh-Hans">
 <meta property="og:image" content="//litten.me/2018/11/14/关于适配Replugin插件化框架使用的路由框架设计思路/replugin.jpg">
-<meta property="og:updated_time" content="2018-11-14T08:52:57.763Z">
+<meta property="og:updated_time" content="2018-11-14T08:59:26.106Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="关于适配Replugin插件化框架的使用">
-<meta name="twitter:description" content="前言公司有内部开发的路由框架, 为了可适配Replugin插件化框架, 当前的路由框架肯定是不能使用的, 由于闭源情况, 这里主要讲下改造的思路">
+<meta name="twitter:description" content="前言公司有内部开发的路由框架, 为了可适配Replugin插件化框架, 当前的路由框架肯定是不能使用的, 由于项目闭源, 这里主要讲下改造的思路">
 <meta name="twitter:image" content="//litten.me/2018/11/14/关于适配Replugin插件化框架使用的路由框架设计思路/replugin.jpg">
 
 
@@ -383,7 +383,7 @@
       
 
       
-        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>公司有内部开发的路由框架, 为了可适配Replugin插件化框架, 当前的路由框架肯定是不能使用的, 由于闭源情况, 这里主要讲下改造的思路<br><a id="more"></a></p>
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>公司有内部开发的路由框架, 为了可适配Replugin插件化框架, 当前的路由框架肯定是不能使用的, 由于项目闭源, 这里主要讲下改造的思路<br><a id="more"></a></p>
 <h2 id="原路由设计思路以及主要问题"><a href="#原路由设计思路以及主要问题" class="headerlink" title="原路由设计思路以及主要问题"></a>原路由设计思路以及主要问题</h2><p>以<code>ARouter</code>为例, 他的设计仅服务于组件化架构项目, 各模块通过APT收集路由信息,APP壳(应用壳)通过反射或者通过TranslateAPI + ASM技术进行动态注册路由映射表, (具体可参考之前的<a href="https://yutiantina.github.io/2018/05/18/ARouter%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90/" target="_blank" rel="noopener">ARouter源码解析</a>)</p>
 <p>我们内部的路由大体的设计原理也差不多如上. 显而易见, 当要接入<code>Replugin</code>的时候, 会出现以下几个问题:</p>
 <ol>
@@ -566,7 +566,7 @@
           
             
               <span class="links-of-author-item">
-                <a href="https:github.com/YuTianTina" target="_blank" title="GitHub">
+                <a href="https://github.com/YuTianTina" target="_blank" title="GitHub">
                   
                     <i class="fa fa-fw fa-github"></i>
                   
