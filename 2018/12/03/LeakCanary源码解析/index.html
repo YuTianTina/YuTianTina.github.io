@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="android,源码解析," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/avatar.png?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="前言本篇基于1.6.1版本源码阅读, 本篇内容就是搞懂LeakCanary如何做到内存泄漏定位的主要流程, 不抠具体细节.">
+<meta name="keywords" content="android,源码解析">
+<meta property="og:type" content="article">
+<meta property="og:title" content="LeakCanary简易解析">
+<meta property="og:url" content="//litten.me/2018/12/03/LeakCanary源码解析/index.html">
+<meta property="og:site_name" content="天晴日无风">
+<meta property="og:description" content="前言本篇基于1.6.1版本源码阅读, 本篇内容就是搞懂LeakCanary如何做到内存泄漏定位的主要流程, 不抠具体细节.">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2018-12-03T14:09:38.573Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="LeakCanary简易解析">
+<meta name="twitter:description" content="前言本篇基于1.6.1版本源码阅读, 本篇内容就是搞懂LeakCanary如何做到内存泄漏定位的主要流程, 不抠具体细节.">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="//litten.me/2018/12/03/LeakCanary源码解析/"/>
+
+
+
+
+
+  <title>LeakCanary简易解析 | 天晴日无风</title>
+  
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//tajs.qq.com/stats?sId=64926000";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">天晴日无风</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">燃烧了一颗恒星来相见</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="//litten.me/2018/12/03/LeakCanary源码解析/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="天晴日无风">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="天晴日无风">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">LeakCanary简易解析</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-12-03T00:00:00+08:00">
+                2018-12-03
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/源码解析/" itemprop="url" rel="index">
+                    <span itemprop="name">源码解析</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>本篇基于<code>1.6.1</code>版本源码阅读, 本篇内容就是搞懂<code>LeakCanary</code>如何做到内存泄漏定位的主要流程, 不抠具体细节.<br><a id="more"></a></p>
+<h2 id="正文"><a href="#正文" class="headerlink" title="正文"></a>正文</h2><p>老样子, 我们直接从从<code>LeakCanary.install(this)</code>作为入口开始看<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> RefWatcher <span class="title">install</span><span class="params">(Application application)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> refWatcher(application).listenerServiceClass(DisplayLeakService.class)</span><br><span class="line">        .excludedRefs(AndroidExcludedRefs.createAppDefaults().build())</span><br><span class="line">        .buildAndInstall();</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">public</span> RefWatcher <span class="title">buildAndInstall</span><span class="params">()</span> </span>&#123;</span><br><span class="line">      <span class="keyword">if</span> (LeakCanaryInternals.installedRefWatcher != <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> UnsupportedOperationException(<span class="string">"buildAndInstall() should only be called once."</span>);</span><br><span class="line">      &#125;</span><br><span class="line">      RefWatcher refWatcher = build();</span><br><span class="line">      <span class="keyword">if</span> (refWatcher != DISABLED) &#123;</span><br><span class="line">        <span class="keyword">if</span> (watchActivities) &#123;</span><br><span class="line">          ActivityRefWatcher.install(context, refWatcher);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (watchFragments) &#123;</span><br><span class="line">          FragmentRefWatcher.Helper.install(context, refWatcher);</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line">      LeakCanaryInternals.installedRefWatcher = refWatcher;</span><br><span class="line">      <span class="keyword">return</span> refWatcher;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure></p>
+<p>通过<code>AndroidRefWatcherBuilder</code>对象进行一系列相关对象的初始化, 包括<code>ServiceHeapDumpListener</code>, <code>ExcludedRefs</code>,以及最重要的<code>RefWatcher</code>.</p>
+<ol>
+<li><code>ServiceHeapDumpListener</code>:堆解析监听, 主要负责启动解析Heap服务以及负责处理引用路径的解析服务的连接</li>
+<li><code>ExcludedRefs</code>: 内存泄漏分析的白名单</li>
+<li><code>RefWatcher</code>: 观测引用是否弱可达, 通过它来观测是否该回收的内存未被回收导致内存泄漏, 如果存在这种情况, 会触发HeapDumper的记录</li>
+</ol>
+<p>我们通过<code>ActivityRefWatcher.install(context, refWatcher)</code>查看Actvitiy的内存泄漏的分析流程<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">install</span><span class="params">(Context context, RefWatcher refWatcher)</span> </span>&#123;</span><br><span class="line">    Application application = (Application) context.getApplicationContext();</span><br><span class="line">    ActivityRefWatcher activityRefWatcher = <span class="keyword">new</span> ActivityRefWatcher(application, refWatcher);</span><br><span class="line"></span><br><span class="line">    application.registerActivityLifecycleCallbacks(activityRefWatcher.lifecycleCallbacks);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">final</span> Application.ActivityLifecycleCallbacks lifecycleCallbacks =</span><br><span class="line">      <span class="keyword">new</span> ActivityLifecycleCallbacksAdapter() &#123;</span><br><span class="line">        <span class="meta">@Override</span> <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onActivityDestroyed</span><span class="params">(Activity activity)</span> </span>&#123;</span><br><span class="line">          refWatcher.watch(activity);</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;;</span><br></pre></td></tr></table></figure></p>
+<p>可以看到注册了一个<code>ActivityLifecycleCallbacks</code>, 在页面生命周期走到<code>onDestroy</code>的时候, 会触发<code>refWatcher.watch(activity)</code><br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">watch</span><span class="params">(Object watchedReference)</span> </span>&#123;</span><br><span class="line">    watch(watchedReference, <span class="string">""</span>);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">/**</span></span><br><span class="line"><span class="comment">   * Watches the provided references and checks if it can be GCed. This method is non blocking,</span></span><br><span class="line"><span class="comment">   * the check is done on the &#123;<span class="doctag">@link</span> WatchExecutor&#125; this &#123;<span class="doctag">@link</span> RefWatcher&#125; has been constructed</span></span><br><span class="line"><span class="comment">   * with.</span></span><br><span class="line"><span class="comment">   *</span></span><br><span class="line"><span class="comment">   * <span class="doctag">@param</span> referenceName An logical identifier for the watched object.</span></span><br><span class="line"><span class="comment">   */</span></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">watch</span><span class="params">(Object watchedReference, String referenceName)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (<span class="keyword">this</span> == DISABLED) &#123;</span><br><span class="line">      <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    checkNotNull(watchedReference, <span class="string">"watchedReference"</span>);</span><br><span class="line">    checkNotNull(referenceName, <span class="string">"referenceName"</span>);</span><br><span class="line">    <span class="keyword">final</span> <span class="keyword">long</span> watchStartNanoTime = System.nanoTime();</span><br><span class="line">    String key = UUID.randomUUID().toString();</span><br><span class="line">    retainedKeys.add(key);</span><br><span class="line">    <span class="keyword">final</span> KeyedWeakReference reference =</span><br><span class="line">        <span class="keyword">new</span> KeyedWeakReference(watchedReference, key, referenceName, queue);</span><br><span class="line"></span><br><span class="line">    ensureGoneAsync(watchStartNanoTime, reference);</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure></p>
+<p>申明弱引用, 放入<code>activity</code>对象, 注册关联<code>queue</code>引用队列<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">ensureGoneAsync</span><span class="params">(<span class="keyword">final</span> <span class="keyword">long</span> watchStartNanoTime, <span class="keyword">final</span> KeyedWeakReference reference)</span> </span>&#123;</span><br><span class="line">    watchExecutor.execute(<span class="keyword">new</span> Retryable() &#123;</span><br><span class="line">      <span class="meta">@Override</span> <span class="keyword">public</span> Retryable.<span class="function">Result <span class="title">run</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> ensureGone(reference, watchStartNanoTime);</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;);</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure></p>
+<p>在<code>AndroidRefWatcherBuilder</code>可以通过<code>watchDelay(long delay, TimeUnit unit)</code>设置是否延迟观测, 如果有设置, 则会在保证在主线程内延迟进行分析内存泄漏; 否则直接执行分析处理<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line">Retryable.<span class="function">Result <span class="title">ensureGone</span><span class="params">(<span class="keyword">final</span> KeyedWeakReference reference, <span class="keyword">final</span> <span class="keyword">long</span> watchStartNanoTime)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">long</span> gcStartNanoTime = System.nanoTime();</span><br><span class="line">    <span class="keyword">long</span> watchDurationMs = NANOSECONDS.toMillis(gcStartNanoTime - watchStartNanoTime);</span><br><span class="line"></span><br><span class="line">    removeWeaklyReachableReferences();</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (debuggerControl.isDebuggerAttached()) &#123;</span><br><span class="line">      <span class="comment">// The debugger can create false leaks.</span></span><br><span class="line">      <span class="keyword">return</span> RETRY;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 不存在内存泄漏的对象</span></span><br><span class="line">    <span class="keyword">if</span> (gone(reference)) &#123;</span><br><span class="line">      <span class="keyword">return</span> DONE;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 重新执行gc</span></span><br><span class="line">    gcTrigger.runGc();</span><br><span class="line">    removeWeaklyReachableReferences();</span><br><span class="line">    <span class="keyword">if</span> (!gone(reference)) &#123;</span><br><span class="line">      <span class="keyword">long</span> startDumpHeap = System.nanoTime();</span><br><span class="line">      <span class="keyword">long</span> gcDurationMs = NANOSECONDS.toMillis(startDumpHeap - gcStartNanoTime);</span><br><span class="line"></span><br><span class="line">      File heapDumpFile = heapDumper.dumpHeap();</span><br><span class="line">      <span class="keyword">if</span> (heapDumpFile == RETRY_LATER) &#123;</span><br><span class="line">        <span class="comment">// Could not dump the heap.</span></span><br><span class="line">        <span class="keyword">return</span> RETRY;</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">long</span> heapDumpDurationMs = NANOSECONDS.toMillis(System.nanoTime() - startDumpHeap);</span><br><span class="line"></span><br><span class="line">      HeapDump heapDump = heapDumpBuilder.heapDumpFile(heapDumpFile).referenceKey(reference.key)</span><br><span class="line">          .referenceName(reference.name)</span><br><span class="line">          .watchDurationMs(watchDurationMs)</span><br><span class="line">          .gcDurationMs(gcDurationMs)</span><br><span class="line">          .heapDumpDurationMs(heapDumpDurationMs)</span><br><span class="line">          .build();</span><br><span class="line"></span><br><span class="line">      heapdumpListener.analyze(heapDump);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> DONE;</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">removeWeaklyReachableReferences</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="comment">// WeakReferences are enqueued as soon as the object to which they point to becomes weakly</span></span><br><span class="line">    <span class="comment">// reachable. This is before finalization or garbage collection has actually happened.</span></span><br><span class="line">    KeyedWeakReference ref;</span><br><span class="line">    <span class="keyword">while</span> ((ref = (KeyedWeakReference) queue.poll()) != <span class="keyword">null</span>) &#123;</span><br><span class="line">      retainedKeys.remove(ref.key);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+<p>每个<code>activity</code>申明弱引用的时候都会有个ID, ID保存在<code>retainedKeys</code>集合中, 首先遍历移除被gc回收的对象, 如果这个时候<code>retainedKeys</code>集合为空, 则表示不存在内存泄漏的情况. 否则手动执行GC, 再次判断移除, 这个时候如果<code>retainedKeys</code>内仍存在ID, 则说明有内存泄漏的情况存在.</p>
+<p>在存在内存泄漏的情况下, 通过<code>heapDumper.dumpHeap()</code>获取堆内存快照, 通过<code>heapdumpListener.analyze</code>去进行解析.<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">analyze</span><span class="params">(HeapDump heapDump)</span> </span>&#123;</span><br><span class="line">    checkNotNull(heapDump, <span class="string">"heapDump"</span>);</span><br><span class="line">    HeapAnalyzerService.runAnalysis(context, heapDump, listenerServiceClass);</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">runAnalysis</span><span class="params">(Context context, HeapDump heapDump,</span></span></span><br><span class="line"><span class="function"><span class="params">      Class&lt;? extends AbstractAnalysisResultService&gt; listenerServiceClass)</span> </span>&#123;</span><br><span class="line">    setEnabledBlocking(context, HeapAnalyzerService.class, <span class="keyword">true</span>);</span><br><span class="line">    setEnabledBlocking(context, listenerServiceClass, <span class="keyword">true</span>);</span><br><span class="line">    Intent intent = <span class="keyword">new</span> Intent(context, HeapAnalyzerService.class);</span><br><span class="line">    intent.putExtra(LISTENER_CLASS_EXTRA, listenerServiceClass.getName());</span><br><span class="line">    intent.putExtra(HEAPDUMP_EXTRA, heapDump);</span><br><span class="line">    ContextCompat.startForegroundService(context, intent);</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+<p>这里启动了<code>HeapAnalyzerService</code>IntentService, 这个服务主要做的就是去解析我们的.hprof文件, 主要的工作内容在<code>onHandleIntentInForeground</code>方法内<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span> <span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">onHandleIntentInForeground</span><span class="params">(@Nullable Intent intent)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (intent == <span class="keyword">null</span>) &#123;</span><br><span class="line">      CanaryLog.d(<span class="string">"HeapAnalyzerService received a null intent, ignoring."</span>);</span><br><span class="line">      <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    String listenerClassName = intent.getStringExtra(LISTENER_CLASS_EXTRA);</span><br><span class="line">    HeapDump heapDump = (HeapDump) intent.getSerializableExtra(HEAPDUMP_EXTRA);</span><br><span class="line"></span><br><span class="line">    HeapAnalyzer heapAnalyzer =</span><br><span class="line">        <span class="keyword">new</span> HeapAnalyzer(heapDump.excludedRefs, <span class="keyword">this</span>, heapDump.reachabilityInspectorClasses);</span><br><span class="line"></span><br><span class="line">    AnalysisResult result = heapAnalyzer.checkForLeak(heapDump.heapDumpFile, heapDump.referenceKey,</span><br><span class="line">        heapDump.computeRetainedHeapSize);</span><br><span class="line">    AbstractAnalysisResultService.sendResultToListener(<span class="keyword">this</span>, listenerClassName, heapDump, result);</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure></p>
+<p>然后通过<code>haha</code>库, 将.hprof文件解析结果<code>AnalysisResult</code>对象, 通过<code>AbstractAnalysisResultService.sendResultToListener</code>传递启动<code>DisplayLeakService</code>服务.<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span> <span class="function"><span class="keyword">protected</span> <span class="keyword">final</span> <span class="keyword">void</span> <span class="title">onHeapAnalyzed</span><span class="params">(HeapDump heapDump, AnalysisResult result)</span> </span>&#123;</span><br><span class="line">    String leakInfo = leakInfo(<span class="keyword">this</span>, heapDump, result, <span class="keyword">true</span>);</span><br><span class="line">    CanaryLog.d(<span class="string">"%s"</span>, leakInfo);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">boolean</span> resultSaved = <span class="keyword">false</span>;</span><br><span class="line">    <span class="keyword">boolean</span> shouldSaveResult = result.leakFound || result.failure != <span class="keyword">null</span>;</span><br><span class="line">    <span class="keyword">if</span> (shouldSaveResult) &#123;</span><br><span class="line">      heapDump = renameHeapdump(heapDump);</span><br><span class="line">      resultSaved = saveResult(heapDump, result);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    PendingIntent pendingIntent;</span><br><span class="line">    String contentTitle;</span><br><span class="line">    String contentText;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (!shouldSaveResult) &#123;</span><br><span class="line">      contentTitle = getString(R.string.leak_canary_no_leak_title);</span><br><span class="line">      contentText = getString(R.string.leak_canary_no_leak_text);</span><br><span class="line">      pendingIntent = <span class="keyword">null</span>;</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (resultSaved) &#123;</span><br><span class="line">      pendingIntent = DisplayLeakActivity.createPendingIntent(<span class="keyword">this</span>, heapDump.referenceKey);</span><br><span class="line"></span><br><span class="line">      <span class="keyword">if</span> (result.failure == <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="keyword">if</span> (result.retainedHeapSize == AnalysisResult.RETAINED_HEAP_SKIPPED) &#123;</span><br><span class="line">          String className = classSimpleName(result.className);</span><br><span class="line">          <span class="keyword">if</span> (result.excludedLeak) &#123;</span><br><span class="line">            contentTitle = getString(R.string.leak_canary_leak_excluded, className);</span><br><span class="line">          &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            contentTitle = getString(R.string.leak_canary_class_has_leaked, className);</span><br><span class="line">          &#125;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">          String size = formatShortFileSize(<span class="keyword">this</span>, result.retainedHeapSize);</span><br><span class="line">          String className = classSimpleName(result.className);</span><br><span class="line">          <span class="keyword">if</span> (result.excludedLeak) &#123;</span><br><span class="line">            contentTitle = getString(R.string.leak_canary_leak_excluded_retaining, className, size);</span><br><span class="line">          &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            contentTitle =</span><br><span class="line">                getString(R.string.leak_canary_class_has_leaked_retaining, className, size);</span><br><span class="line">          &#125;</span><br><span class="line">        &#125;</span><br><span class="line">      &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        contentTitle = getString(R.string.leak_canary_analysis_failed);</span><br><span class="line">      &#125;</span><br><span class="line">      contentText = getString(R.string.leak_canary_notification_message);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      contentTitle = getString(R.string.leak_canary_could_not_save_title);</span><br><span class="line">      contentText = getString(R.string.leak_canary_could_not_save_text);</span><br><span class="line">      pendingIntent = <span class="keyword">null</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// New notification id every second.</span></span><br><span class="line">    <span class="keyword">int</span> notificationId = (<span class="keyword">int</span>) (SystemClock.uptimeMillis() / <span class="number">1000</span>);</span><br><span class="line">    showNotification(<span class="keyword">this</span>, contentTitle, contentText, pendingIntent, notificationId);</span><br><span class="line">    afterDefaultHandling(heapDump, result, leakInfo);</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure></p>
+<p>将对应的.hprof文件重命名, 对应泄漏的内存对象关联key, 传递到<code>DisplayLeakActivity</code>做显示, 另外进行通知显示.</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>通过上文的简易解析, 我们可以得出<code>LeakCanary</code>的一个大概的原理流程.通过application注册<code>ActivityLifecycleCallbacks</code>的回调, 在每个<code>activity</code>销毁的时候, 将<code>activity</code>的弱引用包装绑定在<code>ReferenceQueue</code>上, 当GC的时候, 可以通过<code>queue</code>移除已被回收的activity对象key, 获得始终未被回收的对象, 判断为是内存泄漏, 根据<a href="https://github.com/square/haha" target="_blank" rel="noopener">haha库</a>解析heap dumps,获取引用路径最终在<code>DisplayLeakActivity</code>上显示我们熟悉的内存泄漏的列表内容.</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/android/" rel="tag"># android</a>
+          
+            <a href="/tags/源码解析/" rel="tag"># 源码解析</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/11/14/关于适配Replugin插件化框架使用的路由框架设计思路/" rel="next" title="关于适配Replugin插件化框架的使用">
+                <i class="fa fa-chevron-left"></i> 关于适配Replugin插件化框架的使用
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zMjcwMC85MjYx"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.png"
+               alt="天晴日无风" />
+          <p class="site-author-name" itemprop="name">天晴日无风</p>
+           
+              <p class="site-description motion-element" itemprop="description">开发笔记</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">21</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">6</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">15</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/YuTianTina" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                    
+                      GitHub
+                    
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#正文"><span class="nav-number">2.</span> <span class="nav-text">正文</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">3.</span> <span class="nav-text">总结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy;  2017 - 
+  <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">天晴日无风</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Pisces
+  </a>
+</div>
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script><!-- hexo-inject:begin --><!-- Begin: Injected MathJax -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({"tex2jax":{"inlineMath":[["$","$"],["\\(","\\)"]],"skipTags":["script","noscript","style","textarea","pre","code"],"processEscapes":true},"TeX":{"equationNumbers":{"autoNumber":"AMS"}}});
+</script>
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Queue(function() {
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i=0; i < all.length; i += 1) {
+      all[i].SourceElement().parentNode.className += ' has-jax';
+    }
+  });
+</script>
+
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js">
+</script>
+<!-- End: Injected MathJax -->
+<!-- hexo-inject:end -->
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+
+  
+
+  
+
+</body>
+</html>
