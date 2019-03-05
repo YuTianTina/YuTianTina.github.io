@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="源码解析," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/avatar.png?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="什么是背压(Backpressure)?我们来看下RxJava自身对其的解释  When the dataflow runs through asynchronous steps, each step may perform different things with different speed. To avoid overwhelming such steps, which usually">
+<meta name="keywords" content="源码解析">
+<meta property="og:type" content="article">
+<meta property="og:title" content="RxJava源码解析(三)-背压">
+<meta property="og:url" content="//litten.me/2019/03/05/RxJava源码解析(三)-背压/index.html">
+<meta property="og:site_name" content="天晴日无风">
+<meta property="og:description" content="什么是背压(Backpressure)?我们来看下RxJava自身对其的解释  When the dataflow runs through asynchronous steps, each step may perform different things with different speed. To avoid overwhelming such steps, which usually">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="//litten.me/2019/03/05/RxJava源码解析(三)-背压/process.jpg">
+<meta property="og:image" content="//litten.me/2019/03/05/RxJava源码解析(三)-背压/emitterUML.png">
+<meta property="og:updated_time" content="2019-03-05T09:50:57.758Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="RxJava源码解析(三)-背压">
+<meta name="twitter:description" content="什么是背压(Backpressure)?我们来看下RxJava自身对其的解释  When the dataflow runs through asynchronous steps, each step may perform different things with different speed. To avoid overwhelming such steps, which usually">
+<meta name="twitter:image" content="//litten.me/2019/03/05/RxJava源码解析(三)-背压/process.jpg">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="//litten.me/2019/03/05/RxJava源码解析(三)-背压/"/>
+
+
+
+
+
+  <title>RxJava源码解析(三)-背压 | 天晴日无风</title>
+  
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//tajs.qq.com/stats?sId=64926000";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">天晴日无风</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">燃烧了一颗恒星来相见</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="//litten.me/2019/03/05/RxJava源码解析(三)-背压/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="天晴日无风">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="天晴日无风">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">RxJava源码解析(三)-背压</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-03-05T00:00:00+08:00">
+                2019-03-05
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/源码解析/" itemprop="url" rel="index">
+                    <span itemprop="name">源码解析</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="什么是背压-Backpressure"><a href="#什么是背压-Backpressure" class="headerlink" title="什么是背压(Backpressure)?"></a>什么是背压(Backpressure)?</h2><p>我们来看下RxJava自身对其的解释</p>
+<blockquote>
+<p>When the dataflow runs through asynchronous steps, each step may perform different things with different speed. To avoid overwhelming such steps, which usually would manifest itself as increased memory usage due to temporary buffering or the need for skipping/dropping data, a so-called backpressure is applied, which is a form of flow control where the steps can express how many items are they ready to process. This allows constraining the memory usage of the dataflows in situations where there is generally no way for a step to know how many items the upstream will send to it.</p>
+</blockquote>
+<p>来祭出google翻译,</p>
+<blockquote>
+<p>当数据流通过异步步骤时，每个步骤可以以不同的速度执行不同的操作。<br>为了避免压倒这些步骤，这些步骤通常表现为由于临时缓冲或需要跳过/丢弃数据而增加的内存使用量，所以应用所谓的背压，这是流量控制的一种形式，其中步骤可以表达多少<br>物品准备好了。<br>这允许在通常无法知道上游将向其发送多少项的步骤的情况下约束数据流的存储器使用。</p>
+</blockquote>
+<p>简而言之, 当<code>异步</code>情况下, 上流(被观察者)发送数据过快, 而下流(消费者)无法及时处理数据, 导致缓存内存增大, 最终导致OOM, 这个时候, 背压就是为了处理这种情况.<br><a id="more"></a></p>
+<h2 id="Observable-Observer"><a href="#Observable-Observer" class="headerlink" title="Observable / Observer"></a><code>Observable / Observer</code></h2><p>我们都知道<code>RxJava2</code>主要是增加了使用背压机制下调用的api, 而原来的<code>Observable / Observer</code>组合是不支持背压的, 那么我们先回顾下原来的<code>Observable / Observer</code>组合使用的订阅流程<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">Observable</span><br><span class="line">                <span class="comment">// 新建 ObservableCreate</span></span><br><span class="line">                .create(ObservableOnSubscribe&lt;Int&gt; &#123;</span><br><span class="line">                    var i = <span class="number">0</span></span><br><span class="line">                    <span class="keyword">while</span> (<span class="keyword">true</span>)&#123;</span><br><span class="line">                        it.onNext(i ++)</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;)</span><br><span class="line">                <span class="comment">// 新建 ObservableSubscribeOn</span></span><br><span class="line">                .subscribeOn(Schedulers.io())</span><br><span class="line">                <span class="comment">// 新建 ObservableObserveOn</span></span><br><span class="line">                .observeOn(Schedulers.newThread())</span><br><span class="line">                <span class="comment">// 返回 LambdaObserver</span></span><br><span class="line">                .subscribe&#123;</span><br><span class="line">                    Thread.sleep(<span class="number">5000</span>)</span><br><span class="line">                    Log.d(<span class="string">"rxjava"</span>, it.toString())</span><br><span class="line">                &#125;</span><br></pre></td></tr></table></figure></p>
+<p><a href="https://yutiantina.github.io/2018/02/07/RxJava2%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%901/" target="_blank" rel="noopener"><code>Observable / Observer</code>组合的订阅消费流程</a>和<a href="https://yutiantina.github.io/2018/02/08/RxJava2%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%902/" target="_blank" rel="noopener">线程切换原理</a>在去年都曾经写过, 这里就不再赘述, 我们主要看下, 上游的缓冲池(buffer)的做法, 相关代码在<code>ObserveOnObserver#onNext</code><br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="keyword">final</span> <span class="class"><span class="keyword">class</span> <span class="title">ObserveOnObserver</span>&lt;<span class="title">T</span>&gt; <span class="keyword">extends</span> <span class="title">BasicIntQueueDisposable</span>&lt;<span class="title">T</span>&gt;</span></span><br><span class="line"><span class="class">    <span class="keyword">implements</span> <span class="title">Observer</span>&lt;<span class="title">T</span>&gt;, <span class="title">Runnable</span> </span>&#123;</span><br><span class="line">      ...</span><br><span class="line">      <span class="meta">@Override</span></span><br><span class="line">       <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onSubscribe</span><span class="params">(Disposable d)</span> </span>&#123;</span><br><span class="line">           <span class="keyword">if</span> (DisposableHelper.validate(<span class="keyword">this</span>.upstream, d)) &#123;</span><br><span class="line">               <span class="keyword">this</span>.upstream = d;</span><br><span class="line">               ...</span><br><span class="line"></span><br><span class="line">               queue = <span class="keyword">new</span> SpscLinkedArrayQueue&lt;T&gt;(bufferSize);</span><br><span class="line"></span><br><span class="line">               downstream.onSubscribe(<span class="keyword">this</span>);</span><br><span class="line">           &#125;</span><br><span class="line">       &#125;</span><br><span class="line"></span><br><span class="line">       <span class="meta">@Override</span></span><br><span class="line">       <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onNext</span><span class="params">(T t)</span> </span>&#123;</span><br><span class="line">           <span class="keyword">if</span> (done) &#123;</span><br><span class="line">               <span class="keyword">return</span>;</span><br><span class="line">           &#125;</span><br><span class="line"></span><br><span class="line">           <span class="keyword">if</span> (sourceMode != QueueDisposable.ASYNC) &#123;</span><br><span class="line">               queue.offer(t);</span><br><span class="line">           &#125;</span><br><span class="line">           schedule();</span><br><span class="line">       &#125;</span><br><span class="line">       ...</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">final</span> <span class="class"><span class="keyword">class</span> <span class="title">SpscLinkedArrayQueue</span>&lt;<span class="title">T</span>&gt; <span class="keyword">implements</span> <span class="title">SimplePlainQueue</span>&lt;<span class="title">T</span>&gt; </span>&#123;</span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="title">SpscLinkedArrayQueue</span><span class="params">(<span class="keyword">final</span> <span class="keyword">int</span> bufferSize)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">int</span> p2capacity = Pow2.roundToPowerOfTwo(Math.max(<span class="number">8</span>, bufferSize));</span><br><span class="line">        <span class="keyword">int</span> mask = p2capacity - <span class="number">1</span>;</span><br><span class="line">        AtomicReferenceArray&lt;Object&gt; buffer = <span class="keyword">new</span> AtomicReferenceArray&lt;Object&gt;(p2capacity + <span class="number">1</span>);</span><br><span class="line">        producerBuffer = buffer;</span><br><span class="line">        producerMask = mask;</span><br><span class="line">        adjustLookAheadStep(p2capacity);</span><br><span class="line">        consumerBuffer = buffer;</span><br><span class="line">        consumerMask = mask;</span><br><span class="line">        producerLookAhead = mask - <span class="number">1</span>; <span class="comment">// we know it's all empty to start with</span></span><br><span class="line">        soProducerIndex(<span class="number">0L</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">offer</span><span class="params">(<span class="keyword">final</span> T e)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (<span class="keyword">null</span> == e) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> NullPointerException(<span class="string">"Null is not a valid element"</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// local load of field to avoid repeated loads after volatile reads</span></span><br><span class="line">        <span class="keyword">final</span> AtomicReferenceArray&lt;Object&gt; buffer = producerBuffer;</span><br><span class="line">        <span class="keyword">final</span> <span class="keyword">long</span> index = lpProducerIndex();</span><br><span class="line">        <span class="keyword">final</span> <span class="keyword">int</span> mask = producerMask;</span><br><span class="line">        <span class="keyword">final</span> <span class="keyword">int</span> offset = calcWrappedOffset(index, mask);</span><br><span class="line">        <span class="keyword">if</span> (index &lt; producerLookAhead) &#123;</span><br><span class="line">            <span class="keyword">return</span> writeToQueue(buffer, e, index, offset);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="keyword">final</span> <span class="keyword">int</span> lookAheadStep = producerLookAheadStep;</span><br><span class="line">            <span class="comment">// go around the buffer or resize if full (unless we hit max capacity)</span></span><br><span class="line">            <span class="keyword">int</span> lookAheadElementOffset = calcWrappedOffset(index + lookAheadStep, mask);</span><br><span class="line">            <span class="keyword">if</span> (<span class="keyword">null</span> == lvElement(buffer, lookAheadElementOffset)) &#123; <span class="comment">// LoadLoad</span></span><br><span class="line">                producerLookAhead = index + lookAheadStep - <span class="number">1</span>; <span class="comment">// joy, there's plenty of room</span></span><br><span class="line">                <span class="keyword">return</span> writeToQueue(buffer, e, index, offset);</span><br><span class="line">            &#125; <span class="keyword">else</span> <span class="keyword">if</span> (<span class="keyword">null</span> == lvElement(buffer, calcWrappedOffset(index + <span class="number">1</span>, mask))) &#123; <span class="comment">// buffer is not full</span></span><br><span class="line">                <span class="keyword">return</span> writeToQueue(buffer, e, index, offset);</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                resize(buffer, index, offset, e, mask); <span class="comment">// add a buffer and link old to new</span></span><br><span class="line">                <span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>省略掉大部分不相关代码, 这里大致做的是, 当被观察者被订阅的时候, 会初始化一个<code>SpscLinkedArrayQueue</code>类对象, 他的内部实际维护了一个<code>AtomicReferenceArray</code>对象, 这个就是我们的缓冲队列, 他的初始默认容量是128, 当我们调用到<code>onNext</code>方法的时候, 会首先判断buffer是否已满, 若未满, 则进行插入; 若已满, 则会进行扩容处理, 在异步情况下, 我们的下游无法消费掉buffer内的缓存, 导致内存占用越来越大, 最终导致OOM</p>
+<h2 id="Flowable-Subscriber"><a href="#Flowable-Subscriber" class="headerlink" title="Flowable / Subscriber"></a>Flowable / Subscriber</h2><p>好, 快速过完无背压机制下的订阅流程后, 我们来看下RxJava2是怎么通过<code>Flowable / Subscriber</code>来处理背压的</p>
+<h3 id="订阅响应流程"><a href="#订阅响应流程" class="headerlink" title="订阅响应流程"></a>订阅响应流程</h3><p>首先, 我们来跟着基础Demo来看下Flowable的订阅流程<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line">Flowable</span><br><span class="line"><span class="comment">// 创建 FlowableCreate 对象</span></span><br><span class="line">.create(FlowableOnSubscribe&lt;Int&gt; &#123;</span><br><span class="line"><span class="keyword">for</span>(i in <span class="number">0</span>..<span class="number">150</span>)&#123;</span><br><span class="line">it.onNext(i)</span><br><span class="line">Log.d(<span class="string">"send"</span>, i.toString())</span><br><span class="line">&#125;</span><br><span class="line">&#125;, BackpressureStrategy.LATEST)</span><br><span class="line"><span class="comment">// 创建 FlowableSubscribeOn 对象</span></span><br><span class="line">.subscribeOn(Schedulers.io())</span><br><span class="line"><span class="comment">// 创建 FlowableObserveOn 对象</span></span><br><span class="line">.observeOn(AndroidSchedulers.mainThread())</span><br><span class="line">.subscribe (object : FlowableSubscriber&lt;Int&gt; &#123;</span><br><span class="line">lateinit var s: Subscription</span><br><span class="line">var i = <span class="number">1</span></span><br><span class="line"><span class="function">override fun <span class="title">onComplete</span><span class="params">()</span> </span>&#123;</span><br><span class="line">Log.d(<span class="string">"rxjava"</span>, <span class="string">"complete"</span>)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function">override fun <span class="title">onSubscribe</span><span class="params">(s: Subscription)</span> </span>&#123;</span><br><span class="line"><span class="keyword">this</span>.s = s</span><br><span class="line">s.request(<span class="number">130</span>)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function">override fun <span class="title">onNext</span><span class="params">(t: Int?)</span> </span>&#123;</span><br><span class="line">Log.e(<span class="string">"rxjava receive"</span>, <span class="string">"$&#123;i++&#125; $t"</span>)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function">override fun <span class="title">onError</span><span class="params">(t: Throwable?)</span> </span>&#123;</span><br><span class="line">t?.printStackTrace()</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">&#125;)</span><br><span class="line">Thread.sleep(<span class="number">5000</span>)</span><br></pre></td></tr></table></figure></p>
+<ol>
+<li><p><code>create</code>操作符用来初始化一个<code>FlowableCreate</code>对象, 并返回</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> &lt;T&gt; <span class="function">Flowable&lt;T&gt; <span class="title">create</span><span class="params">(FlowableOnSubscribe&lt;T&gt; source, BackpressureStrategy mode)</span> </span>&#123;</span><br><span class="line">        ObjectHelper.requireNonNull(source, <span class="string">"source is null"</span>);</span><br><span class="line">        ObjectHelper.requireNonNull(mode, <span class="string">"mode is null"</span>);</span><br><span class="line">        <span class="keyword">return</span> RxJavaPlugins.onAssembly(<span class="keyword">new</span> FlowableCreate&lt;T&gt;(source, mode));</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p><code>subscribeOn</code>操作符 将<code>FlowableCreate</code>进行包装, 以<code>FlowableSubscribeOn</code>对象返回</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">final</span> Flowable&lt;T&gt; <span class="title">subscribeOn</span><span class="params">(@NonNull Scheduler scheduler)</span> </span>&#123;</span><br><span class="line">        ObjectHelper.requireNonNull(scheduler, <span class="string">"scheduler is null"</span>);</span><br><span class="line">        <span class="keyword">return</span> subscribeOn(scheduler, !(<span class="keyword">this</span> <span class="keyword">instanceof</span> FlowableCreate));</span><br><span class="line">    &#125;</span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">final</span> Flowable&lt;T&gt; <span class="title">subscribeOn</span><span class="params">(@NonNull Scheduler scheduler, <span class="keyword">boolean</span> requestOn)</span> </span>&#123;</span><br><span class="line">        ObjectHelper.requireNonNull(scheduler, <span class="string">"scheduler is null"</span>);</span><br><span class="line">        <span class="keyword">return</span> RxJavaPlugins.onAssembly(<span class="keyword">new</span> FlowableSubscribeOn&lt;T&gt;(<span class="keyword">this</span>, scheduler, requestOn));</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p><code>observeOn</code>操作符 将<code>FlowableSubscribeOn</code>进行包装, 并以<code>FlowableObserveOn</code>对象返回</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">final</span> Flowable&lt;T&gt; <span class="title">observeOn</span><span class="params">(Scheduler scheduler)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> observeOn(scheduler, <span class="keyword">false</span>, bufferSize());</span><br><span class="line">    &#125;</span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">final</span> Flowable&lt;T&gt; <span class="title">observeOn</span><span class="params">(Scheduler scheduler, <span class="keyword">boolean</span> delayError, <span class="keyword">int</span> bufferSize)</span> </span>&#123;</span><br><span class="line">        ObjectHelper.requireNonNull(scheduler, <span class="string">"scheduler is null"</span>);</span><br><span class="line">        ObjectHelper.verifyPositive(bufferSize, <span class="string">"bufferSize"</span>);</span><br><span class="line">        <span class="keyword">return</span> RxJavaPlugins.onAssembly(<span class="keyword">new</span> FlowableObserveOn&lt;T&gt;(<span class="keyword">this</span>, scheduler, delayError, bufferSize));</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+<p>注意这里传入的<code>butterSize()</code>方法, 他的详细代码如下<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">int</span> BUFFER_SIZE;</span><br><span class="line">    <span class="keyword">static</span> &#123;</span><br><span class="line">        BUFFER_SIZE = Math.max(<span class="number">1</span>, Integer.getInteger(<span class="string">"rx2.buffer-size"</span>, <span class="number">128</span>));</span><br><span class="line">    &#125;</span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">int</span> <span class="title">bufferSize</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> BUFFER_SIZE;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure></p>
+<p>在<code>FlowableObserveOn</code>类里, <code>prefetch</code>表示的是初始的缓存池大小, 可以看出, 如果不指定buffer大小, 那么我们默认大小就是<code>128</code><br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">final</span> <span class="class"><span class="keyword">class</span> <span class="title">FlowableObserveOn</span>&lt;<span class="title">T</span>&gt; <span class="keyword">extends</span> <span class="title">AbstractFlowableWithUpstream</span>&lt;<span class="title">T</span>, <span class="title">T</span>&gt; </span>&#123;</span><br><span class="line">  ...</span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="title">FlowableObserveOn</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">             Flowable&lt;T&gt; source,</span></span></span><br><span class="line"><span class="function"><span class="params">             Scheduler scheduler,</span></span></span><br><span class="line"><span class="function"><span class="params">             <span class="keyword">boolean</span> delayError,</span></span></span><br><span class="line"><span class="function"><span class="params">             <span class="keyword">int</span> prefetch)</span> </span>&#123;</span><br><span class="line">         <span class="keyword">super</span>(source);</span><br><span class="line">         <span class="keyword">this</span>.scheduler = scheduler;</span><br><span class="line">         <span class="keyword">this</span>.delayError = delayError;</span><br><span class="line">         <span class="comment">// 预约的缓存池初始化大小</span></span><br><span class="line">         <span class="keyword">this</span>.prefetch = prefetch;</span><br><span class="line">     &#125;</span><br><span class="line">   ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<ol>
+<li><code>subscribe</code>操作符, 以当前Demo为例, 我们这里生成了一个<code>LambdaSubscriber</code>, 而后调用到的是我们上个操作符流程返回的<code>Flowable#subscribe</code><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">final</span> Disposable <span class="title">subscribe</span><span class="params">(Consumer&lt;? <span class="keyword">super</span> T&gt; onNext, Consumer&lt;? <span class="keyword">super</span> Throwable&gt; onError)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> subscribe(onNext, onError, Functions.EMPTY_ACTION, FlowableInternalHelper.RequestMax.INSTANCE);</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">final</span> Disposable <span class="title">subscribe</span><span class="params">(Consumer&lt;? <span class="keyword">super</span> T&gt; onNext, Consumer&lt;? <span class="keyword">super</span> Throwable&gt; onError,</span></span></span><br><span class="line"><span class="function"><span class="params">            Action onComplete, Consumer&lt;? <span class="keyword">super</span> Subscription&gt; onSubscribe)</span> </span>&#123;</span><br><span class="line">        ...</span><br><span class="line"></span><br><span class="line">        LambdaSubscriber&lt;T&gt; ls = <span class="keyword">new</span> LambdaSubscriber&lt;T&gt;(onNext, onError, onComplete, onSubscribe);</span><br><span class="line"></span><br><span class="line">        subscribe(ls);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> ls;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">void</span> <span class="title">subscribe</span><span class="params">(FlowableSubscriber&lt;? <span class="keyword">super</span> T&gt; s)</span> </span>&#123;</span><br><span class="line">        ObjectHelper.requireNonNull(s, <span class="string">"s is null"</span>);</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            Subscriber&lt;? <span class="keyword">super</span> T&gt; z = RxJavaPlugins.onSubscribe(<span class="keyword">this</span>, s);</span><br><span class="line"></span><br><span class="line">            ...</span><br><span class="line"></span><br><span class="line">            subscribeActual(z);</span><br><span class="line">        &#125; <span class="keyword">catch</span> (NullPointerException e) &#123; <span class="comment">// NOPMD</span></span><br><span class="line">            <span class="keyword">throw</span> e;</span><br><span class="line">        &#125; <span class="keyword">catch</span> (Throwable e) &#123;</span><br><span class="line">            Exceptions.throwIfFatal(e);</span><br><span class="line">            <span class="comment">// can't call onError because no way to know if a Subscription has been set or not</span></span><br><span class="line">            <span class="comment">// can't call onSubscribe because the call might have set a Subscription already</span></span><br><span class="line">            RxJavaPlugins.onError(e);</span><br><span class="line"></span><br><span class="line">            NullPointerException npe = <span class="keyword">new</span> NullPointerException(<span class="string">"Actually not, but can't throw other exceptions due to RS"</span>);</span><br><span class="line">            npe.initCause(e);</span><br><span class="line">            <span class="keyword">throw</span> npe;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>最终走到<code>Flowable#subscribeActual(Subscriber&lt;? super T&gt; s)</code>方法, 它是个抽象方法, 由调用方<code>FlowableObserveOn</code>对象实现<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">final</span> <span class="class"><span class="keyword">class</span> <span class="title">FlowableObserveOn</span>&lt;<span class="title">T</span>&gt; <span class="keyword">extends</span> <span class="title">AbstractFlowableWithUpstream</span>&lt;<span class="title">T</span>, <span class="title">T</span>&gt; </span>&#123;</span><br><span class="line">  ...</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">subscribeActual</span><span class="params">(Subscriber&lt;? <span class="keyword">super</span> T&gt; s)</span> </span>&#123;</span><br><span class="line">        Worker worker = scheduler.createWorker();</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (s <span class="keyword">instanceof</span> ConditionalSubscriber) &#123;</span><br><span class="line">            source.subscribe(<span class="keyword">new</span> ObserveOnConditionalSubscriber&lt;T&gt;(</span><br><span class="line">                    (ConditionalSubscriber&lt;? <span class="keyword">super</span> T&gt;) s, worker, delayError, prefetch));</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            source.subscribe(<span class="keyword">new</span> ObserveOnSubscriber&lt;T&gt;(s, worker, delayError, prefetch));</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<ol>
+<li><p>这里<code>source</code>对象是我们前面被包装的<code>FlowableSubscribeOn</code>对象, 是不是很熟悉?<br><code>FlowableSubscribeOn</code>类继承于<code>Flowable</code>, 而<code>Flowable#subscribe(FlowableSubscriber&lt;? super T&gt; s)</code>方法最终走到 <code>Flowable#subscribeActual(Subscriber&lt;? super T&gt; s)</code>,上文已知这是个抽象方法, 最终执行到<code>FlowableSubscribeOn#subscribeActual</code>, 并将<code>LambdaSubscriber</code>包装成<code>ObserveOnSubscriber</code>作为参数传递进去</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">final</span> <span class="class"><span class="keyword">class</span> <span class="title">FlowableSubscribeOn</span>&lt;<span class="title">T</span>&gt; <span class="keyword">extends</span> <span class="title">AbstractFlowableWithUpstream</span>&lt;<span class="title">T</span> , <span class="title">T</span>&gt; </span>&#123;</span><br><span class="line">  ...</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">subscribeActual</span><span class="params">(<span class="keyword">final</span> Subscriber&lt;? <span class="keyword">super</span> T&gt; s)</span> </span>&#123;</span><br><span class="line">        Scheduler.Worker w = scheduler.createWorker();</span><br><span class="line">        <span class="keyword">final</span> SubscribeOnSubscriber&lt;T&gt; sos = <span class="keyword">new</span> SubscribeOnSubscriber&lt;T&gt;(s, w, source, nonScheduledRequests);</span><br><span class="line">        <span class="comment">// s 为 ObserveOnSubscriber 对象</span></span><br><span class="line">        s.onSubscribe(sos);</span><br><span class="line"></span><br><span class="line">        w.schedule(sos);</span><br><span class="line">   &#125;</span><br><span class="line">   ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<ul>
+<li>我们先来看下<code>s.onSubscribe(sos);</code>执行代码<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="keyword">final</span> <span class="class"><span class="keyword">class</span> <span class="title">ObserveOnSubscriber</span>&lt;<span class="title">T</span>&gt; <span class="keyword">extends</span> <span class="title">BaseObserveOnSubscriber</span>&lt;<span class="title">T</span>&gt;</span></span><br><span class="line"><span class="class">    <span class="keyword">implements</span> <span class="title">FlowableSubscriber</span>&lt;<span class="title">T</span>&gt; </span>&#123;</span><br><span class="line">      ...</span><br><span class="line">      <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onSubscribe</span><span class="params">(Subscription s)</span> </span>&#123;</span><br><span class="line">            <span class="keyword">if</span> (SubscriptionHelper.validate(<span class="keyword">this</span>.upstream, s)) &#123;</span><br><span class="line">                <span class="keyword">this</span>.upstream = s;</span><br><span class="line"></span><br><span class="line">                <span class="keyword">if</span> (s <span class="keyword">instanceof</span> QueueSubscription) &#123;</span><br><span class="line">                    <span class="meta">@SuppressWarnings</span>(<span class="string">"unchecked"</span>)</span><br><span class="line">                    QueueSubscription&lt;T&gt; f = (QueueSubscription&lt;T&gt;) s;</span><br><span class="line"></span><br><span class="line">                    <span class="keyword">int</span> m = f.requestFusion(ANY | BOUNDARY);</span><br><span class="line"></span><br><span class="line">                    <span class="keyword">if</span> (m == SYNC) &#123;</span><br><span class="line">                        sourceMode = SYNC;</span><br><span class="line">                        queue = f;</span><br><span class="line">                        done = <span class="keyword">true</span>;</span><br><span class="line"></span><br><span class="line">                        downstream.onSubscribe(<span class="keyword">this</span>);</span><br><span class="line">                        <span class="keyword">return</span>;</span><br><span class="line">                    &#125; <span class="keyword">else</span></span><br><span class="line">                    <span class="keyword">if</span> (m == ASYNC) &#123;</span><br><span class="line">                        sourceMode = ASYNC;</span><br><span class="line">                        queue = f;</span><br><span class="line"></span><br><span class="line">                        downstream.onSubscribe(<span class="keyword">this</span>);</span><br><span class="line"></span><br><span class="line">                        s.request(prefetch);</span><br><span class="line"></span><br><span class="line">                        <span class="keyword">return</span>;</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="comment">// 初始化缓存队列</span></span><br><span class="line">                <span class="comment">// prefetch 默认大小为128</span></span><br><span class="line">                queue = <span class="keyword">new</span> SpscArrayQueue&lt;T&gt;(prefetch);</span><br><span class="line">                <span class="comment">// 下流订阅执行</span></span><br><span class="line">                downstream.onSubscribe(<span class="keyword">this</span>);</span><br><span class="line">                <span class="comment">// 上流的subscription request 执行</span></span><br><span class="line">                s.request(prefetch);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">      ...</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+</li>
+</ol>
+<p>可以看到, 在这个时候, 就会执行到消费者的<code>onSubscribe</code>方法, 然后会执行到<code>SubscribeOnSubscriber#request</code><br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="keyword">final</span> <span class="class"><span class="keyword">class</span> <span class="title">SubscribeOnSubscriber</span>&lt;<span class="title">T</span>&gt; <span class="keyword">extends</span> <span class="title">AtomicReference</span>&lt;<span class="title">Thread</span>&gt;</span></span><br><span class="line"><span class="class">    <span class="keyword">implements</span> <span class="title">FlowableSubscriber</span>&lt;<span class="title">T</span>&gt;, <span class="title">Subscription</span>, <span class="title">Runnable</span> </span>&#123;</span><br><span class="line">      <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">request</span><span class="params">(<span class="keyword">final</span> <span class="keyword">long</span> n)</span> </span>&#123;</span><br><span class="line">            <span class="keyword">if</span> (SubscriptionHelper.validate(n)) &#123;</span><br><span class="line">                Subscription s = <span class="keyword">this</span>.upstream.get();</span><br><span class="line">                <span class="keyword">if</span> (s != <span class="keyword">null</span>) &#123;</span><br><span class="line">                    requestUpstream(n, s);</span><br><span class="line">                &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                    BackpressureHelper.add(requested, n);</span><br><span class="line">                    s = <span class="keyword">this</span>.upstream.get();</span><br><span class="line">                    <span class="keyword">if</span> (s != <span class="keyword">null</span>) &#123;</span><br><span class="line">                        <span class="keyword">long</span> r = requested.getAndSet(<span class="number">0L</span>);</span><br><span class="line">                        <span class="keyword">if</span> (r != <span class="number">0L</span>) &#123;</span><br><span class="line">                            requestUpstream(r, s);</span><br><span class="line">                        &#125;</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure></p>
+<p><code>SubscribeOnSubscriber</code>实现了<code>Subscription</code>的接口, <code>request</code>方法主要用来处理内部缓存最大值<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">Subscription</span> </span>&#123;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * No events will be sent by a &#123;<span class="doctag">@link</span> Publisher&#125; until demand is signaled via this method.</span></span><br><span class="line"><span class="comment">     * &lt;p&gt;</span></span><br><span class="line"><span class="comment">     * It can be called however often and whenever needed—but the outstanding cumulative demand must never exceed Long.MAX_VALUE.</span></span><br><span class="line"><span class="comment">     * An outstanding cumulative demand of Long.MAX_VALUE may be treated by the &#123;<span class="doctag">@link</span> Publisher&#125; as "effectively unbounded".</span></span><br><span class="line"><span class="comment">     * &lt;p&gt;</span></span><br><span class="line"><span class="comment">     * Whatever has been requested can be sent by the &#123;<span class="doctag">@link</span> Publisher&#125; so only signal demand for what can be safely handled.</span></span><br><span class="line"><span class="comment">     * &lt;p&gt;</span></span><br><span class="line"><span class="comment">     * A &#123;<span class="doctag">@link</span> Publisher&#125; can send less than is requested if the stream ends but</span></span><br><span class="line"><span class="comment">     * then must emit either &#123;<span class="doctag">@link</span> Subscriber#onError(Throwable)&#125; or &#123;<span class="doctag">@link</span> Subscriber#onComplete()&#125;.</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> n the strictly positive number of elements to requests to the upstream &#123;<span class="doctag">@link</span> Publisher&#125;</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">request</span><span class="params">(<span class="keyword">long</span> n)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">cancel</span><span class="params">()</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<ul>
+<li>这里, 和原来的线程切换原理相同, 根据<code>scheduler.createWorker</code>根据工厂模式的帮助, 创建新的<code>Worker</code>对象, 它的内部的工作原理都是通过线程池来执行对应的<code>Runnable</code>, 而我们包装后所得的<code>SubscribeOnSubscriber</code>对象正是继承于<code>Runnable</code>, 我们可以看他内部实现的<code>run</code><br>方法<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="keyword">final</span> <span class="class"><span class="keyword">class</span> <span class="title">SubscribeOnSubscriber</span>&lt;<span class="title">T</span>&gt; <span class="keyword">extends</span> <span class="title">AtomicReference</span>&lt;<span class="title">Thread</span>&gt;</span></span><br><span class="line"><span class="class">    <span class="keyword">implements</span> <span class="title">FlowableSubscriber</span>&lt;<span class="title">T</span>&gt;, <span class="title">Subscription</span>, <span class="title">Runnable</span> </span>&#123;</span><br><span class="line">        ...</span><br><span class="line">        SubscribeOnSubscriber(Subscriber&lt;? <span class="keyword">super</span> T&gt; actual, Scheduler.Worker worker, Publisher&lt;T&gt; source, <span class="keyword">boolean</span> requestOn) &#123;</span><br><span class="line">            <span class="keyword">this</span>.downstream = actual;</span><br><span class="line">            <span class="keyword">this</span>.worker = worker;</span><br><span class="line">            <span class="keyword">this</span>.source = source;</span><br><span class="line">            <span class="keyword">this</span>.upstream = <span class="keyword">new</span> AtomicReference&lt;Subscription&gt;();</span><br><span class="line">            <span class="keyword">this</span>.requested = <span class="keyword">new</span> AtomicLong();</span><br><span class="line">            <span class="keyword">this</span>.nonScheduledRequests = !requestOn;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">run</span><span class="params">()</span> </span>&#123;</span><br><span class="line">            lazySet(Thread.currentThread());</span><br><span class="line">            Publisher&lt;T&gt; src = source;</span><br><span class="line">            source = <span class="keyword">null</span>;</span><br><span class="line">            src.subscribe(<span class="keyword">this</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        ...</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>这里的<code>source</code>是在<code>FlowableSubscribeOn</code>初始化的时候, 通过构造函数传入的, 而我们知道, 他的内部是<code>FlowableCreate</code><br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="title">FlowableSubscribeOn</span><span class="params">(Flowable&lt;T&gt; source, Scheduler scheduler, <span class="keyword">boolean</span> nonScheduledRequests)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">super</span>(source);</span><br><span class="line">        <span class="keyword">this</span>.scheduler = scheduler;</span><br><span class="line">        <span class="keyword">this</span>.nonScheduledRequests = nonScheduledRequests;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure></p>
+<ul>
+<li>根据前面的套路, 我们直接去看<code>FlowableCreate</code>下的<code>subscribeActual</code>实现方法<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">subscribeActual</span><span class="params">(Subscriber&lt;? <span class="keyword">super</span> T&gt; t)</span> </span>&#123;</span><br><span class="line">        BaseEmitter&lt;T&gt; emitter;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">switch</span> (backpressure) &#123;</span><br><span class="line">        <span class="keyword">case</span> MISSING: &#123;</span><br><span class="line">            emitter = <span class="keyword">new</span> MissingEmitter&lt;T&gt;(t);</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">case</span> ERROR: &#123;</span><br><span class="line">            emitter = <span class="keyword">new</span> ErrorAsyncEmitter&lt;T&gt;(t);</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">case</span> DROP: &#123;</span><br><span class="line">            emitter = <span class="keyword">new</span> DropAsyncEmitter&lt;T&gt;(t);</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">case</span> LATEST: &#123;</span><br><span class="line">            emitter = <span class="keyword">new</span> LatestAsyncEmitter&lt;T&gt;(t);</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">default</span>: &#123;</span><br><span class="line">            emitter = <span class="keyword">new</span> BufferAsyncEmitter&lt;T&gt;(t, bufferSize());</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// SubscribeOnSubscriber.onSubscribe</span></span><br><span class="line">        t.onSubscribe(emitter);</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">          <span class="comment">// 执行被观察者发送事件</span></span><br><span class="line">            source.subscribe(emitter);</span><br><span class="line">        &#125; <span class="keyword">catch</span> (Throwable ex) &#123;</span><br><span class="line">            Exceptions.throwIfFatal(ex);</span><br><span class="line">            emitter.onError(ex);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>可以看到, 根据我们选择的背压策略, 新建不同类型继承于<code>BaseEmitter</code>类对象.</p>
+<ul>
+<li>而这时候, 首先执行的是<code>SubscribeOnSubscriber#onSubscribe</code><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onSubscribe</span><span class="params">(Subscription s)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (SubscriptionHelper.setOnce(<span class="keyword">this</span>.upstream, s)) &#123;</span><br><span class="line">      <span class="comment">// 初始128</span></span><br><span class="line">        <span class="keyword">long</span> r = requested.getAndSet(<span class="number">0L</span>);</span><br><span class="line">        <span class="keyword">if</span> (r != <span class="number">0L</span>) &#123;</span><br><span class="line">            requestUpstream(r, s);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// 切换线程到正确的目标线程上</span></span><br><span class="line"><span class="comment">// 最终执行 Subscription#request(n)</span></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">requestUpstream</span><span class="params">(<span class="keyword">final</span> <span class="keyword">long</span> n, <span class="keyword">final</span> Subscription s)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (nonScheduledRequests || Thread.currentThread() == get()) &#123;</span><br><span class="line">        s.request(n);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        worker.schedule(<span class="keyword">new</span> Request(s, n));</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>这里的<code>Subscription</code>是前面<code>BaseEmitter</code>对象, 将其内部的缓存容量大小设为默认的128大小.<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">abstract</span> <span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">BaseEmitter</span>&lt;<span class="title">T</span>&gt;</span></span><br><span class="line"><span class="class">    <span class="keyword">extends</span> <span class="title">AtomicLong</span></span></span><br><span class="line"><span class="class">    <span class="keyword">implements</span> <span class="title">FlowableEmitter</span>&lt;<span class="title">T</span>&gt;, <span class="title">Subscription</span> </span>&#123;</span><br><span class="line">      <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">void</span> <span class="title">request</span><span class="params">(<span class="keyword">long</span> n)</span> </span>&#123;</span><br><span class="line">            <span class="keyword">if</span> (SubscriptionHelper.validate(n)) &#123;</span><br><span class="line">                BackpressureHelper.add(<span class="keyword">this</span>, n);</span><br><span class="line">                onRequested();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="function"><span class="keyword">void</span> <span class="title">onRequested</span><span class="params">()</span> </span>&#123;</span><br><span class="line">            <span class="comment">// default is no-op</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure></p>
+<ul>
+<li><p>到这里我们的订阅整个流程已经完成, 然后我们通过实现的被观察者的发送事件, 通过<code>emitter</code>来循环发送自增整型<code>i</code></p>
+<ul>
+<li>我们来看下排除掉背压控制后的响应流程, 关于几个背压策略我们后文细讲,  这里我们需要知道<code>MissingEmitter</code>是不会处理背压, 所以我们从他的<code>onNext</code>看起<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="keyword">final</span> <span class="class"><span class="keyword">class</span> <span class="title">MissingEmitter</span>&lt;<span class="title">T</span>&gt; <span class="keyword">extends</span> <span class="title">BaseEmitter</span>&lt;<span class="title">T</span>&gt; </span>&#123;</span><br><span class="line">        MissingEmitter(Subscriber&lt;? <span class="keyword">super</span> T&gt; downstream) &#123;</span><br><span class="line">            <span class="keyword">super</span>(downstream);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">      <span class="meta">@Override</span></span><br><span class="line">      <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onNext</span><span class="params">(T t)</span> </span>&#123;</span><br><span class="line">          <span class="keyword">if</span> (isCancelled()) &#123;</span><br><span class="line">              <span class="keyword">return</span>;</span><br><span class="line">          &#125;</span><br><span class="line"></span><br><span class="line">          <span class="keyword">if</span> (t != <span class="keyword">null</span>) &#123;</span><br><span class="line">              downstream.onNext(t);</span><br><span class="line">          &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">              onError(<span class="keyword">new</span> NullPointerException(<span class="string">"onNext called with null. Null values are generally not allowed in 2.x operators and sources."</span>));</span><br><span class="line">              <span class="keyword">return</span>;</span><br><span class="line">          &#125;</span><br><span class="line">          ...</span><br><span class="line">      &#125;</span><br><span class="line"></span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>直接执行下流的<code>onNext</code>方法, 而它的下流是<code>SubscribeOnSubscriber</code></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="keyword">final</span> <span class="class"><span class="keyword">class</span> <span class="title">SubscribeOnSubscriber</span>&lt;<span class="title">T</span>&gt; <span class="keyword">extends</span> <span class="title">AtomicReference</span>&lt;<span class="title">Thread</span>&gt;</span></span><br><span class="line"><span class="class">  <span class="keyword">implements</span> <span class="title">FlowableSubscriber</span>&lt;<span class="title">T</span>&gt;, <span class="title">Subscription</span>, <span class="title">Runnable</span> </span>&#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">      <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onNext</span><span class="params">(T t)</span> </span>&#123;</span><br><span class="line">          downstream.onNext(t);</span><br><span class="line">      &#125;</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<ul>
+<li><code>SubscribeOnSubscriber</code>的下流是<code>ObserveOnSubscriber</code>, 他的<code>onNext</code>方法在父类<code>BaseObserveOnSubscriber</code>中<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">abstract</span> <span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">BaseObserveOnSubscriber</span>&lt;<span class="title">T</span>&gt;</span></span><br><span class="line"><span class="class">  <span class="keyword">extends</span> <span class="title">BasicIntQueueSubscription</span>&lt;<span class="title">T</span>&gt;</span></span><br><span class="line"><span class="class">  <span class="keyword">implements</span> <span class="title">FlowableSubscriber</span>&lt;<span class="title">T</span>&gt;, <span class="title">Runnable</span> </span>&#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">      <span class="function"><span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">void</span> <span class="title">onNext</span><span class="params">(T t)</span> </span>&#123;</span><br><span class="line">          <span class="keyword">if</span> (done) &#123;</span><br><span class="line">              <span class="keyword">return</span>;</span><br><span class="line">          &#125;</span><br><span class="line">          <span class="keyword">if</span> (sourceMode == ASYNC) &#123;</span><br><span class="line">              trySchedule();</span><br><span class="line">              <span class="keyword">return</span>;</span><br><span class="line">          &#125;</span><br><span class="line">          <span class="keyword">if</span> (!queue.offer(t)) &#123;</span><br><span class="line">              upstream.cancel();</span><br><span class="line"></span><br><span class="line">              error = <span class="keyword">new</span> MissingBackpressureException(<span class="string">"Queue is full?!"</span>);</span><br><span class="line">              done = <span class="keyword">true</span>;</span><br><span class="line">          &#125;</span><br><span class="line">          trySchedule();</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="function"><span class="keyword">final</span> <span class="keyword">void</span> <span class="title">trySchedule</span><span class="params">()</span> </span>&#123;</span><br><span class="line">          <span class="keyword">if</span> (getAndIncrement() != <span class="number">0</span>) &#123;</span><br><span class="line">              <span class="keyword">return</span>;</span><br><span class="line">          &#125;</span><br><span class="line">          worker.schedule(<span class="keyword">this</span>);</span><br><span class="line">      &#125;</span><br><span class="line"></span><br><span class="line">      <span class="meta">@Override</span></span><br><span class="line">      <span class="function"><span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">void</span> <span class="title">run</span><span class="params">()</span> </span>&#123;</span><br><span class="line">          <span class="keyword">if</span> (outputFused) &#123;</span><br><span class="line">              runBackfused();</span><br><span class="line">          &#125; <span class="keyword">else</span> <span class="keyword">if</span> (sourceMode == SYNC) &#123;</span><br><span class="line">              runSync();</span><br><span class="line">          &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">              runAsync();</span><br><span class="line">          &#125;</span><br><span class="line">      &#125;</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p><code>ObserveOnSubscriber</code>内部维护的<code>queue</code>是<code>SpscArrayQueue</code>, 当维护的队列满了以后, 直接返回false, 而不会再做扩容操作, 当检测到内部缓存队列已满的时候, 会设置<code>done</code>为true, 异常为<code>MissingBackpressureException</code><br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">offer</span><span class="params">(E e)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (<span class="keyword">null</span> == e) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> NullPointerException(<span class="string">"Null is not a valid element"</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// local load of field to avoid repeated loads after volatile reads</span></span><br><span class="line">        <span class="keyword">final</span> <span class="keyword">int</span> mask = <span class="keyword">this</span>.mask;</span><br><span class="line">        <span class="keyword">final</span> <span class="keyword">long</span> index = producerIndex.get();</span><br><span class="line">        <span class="keyword">final</span> <span class="keyword">int</span> offset = calcElementOffset(index, mask);</span><br><span class="line">        <span class="keyword">if</span> (index &gt;= producerLookAhead) &#123;</span><br><span class="line">            <span class="keyword">int</span> step = lookAheadStep;</span><br><span class="line">            <span class="keyword">if</span> (<span class="keyword">null</span> == lvElement(calcElementOffset(index + step, mask))) &#123; <span class="comment">// LoadLoad</span></span><br><span class="line">                producerLookAhead = index + step;</span><br><span class="line">            &#125; <span class="keyword">else</span> <span class="keyword">if</span> (<span class="keyword">null</span> != lvElement(offset)) &#123;</span><br><span class="line">                <span class="keyword">return</span> <span class="keyword">false</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        soElement(offset, e); <span class="comment">// StoreStore</span></span><br><span class="line">        soProducerIndex(index + <span class="number">1</span>); <span class="comment">// ordered store -&gt; atomic and ordered for size()</span></span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure></p>
+<p>来看下他的异步处理<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">runAsync</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">int</span> missed = <span class="number">1</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">final</span> Subscriber&lt;? <span class="keyword">super</span> T&gt; a = downstream;</span><br><span class="line">    <span class="keyword">final</span> SimpleQueue&lt;T&gt; q = queue;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">long</span> e = produced;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> (;;) &#123;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">long</span> r = requested.get();</span><br><span class="line"></span><br><span class="line">        <span class="keyword">while</span> (e != r) &#123;</span><br><span class="line">            <span class="keyword">boolean</span> d = done;</span><br><span class="line">            T v;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                v = q.poll();</span><br><span class="line">            &#125; <span class="keyword">catch</span> (Throwable ex) &#123;</span><br><span class="line">                Exceptions.throwIfFatal(ex);</span><br><span class="line"></span><br><span class="line">                cancelled = <span class="keyword">true</span>;</span><br><span class="line">                upstream.cancel();</span><br><span class="line">                q.clear();</span><br><span class="line"></span><br><span class="line">                a.onError(ex);</span><br><span class="line">                worker.dispose();</span><br><span class="line">                <span class="keyword">return</span>;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">boolean</span> empty = v == <span class="keyword">null</span>;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">if</span> (checkTerminated(d, empty, a)) &#123;</span><br><span class="line">                <span class="keyword">return</span>;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">if</span> (empty) &#123;</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            a.onNext(v);</span><br><span class="line"></span><br><span class="line">            e++;</span><br><span class="line">            <span class="keyword">if</span> (e == limit) &#123;</span><br><span class="line">                <span class="keyword">if</span> (r != Long.MAX_VALUE) &#123;</span><br><span class="line">                    r = requested.addAndGet(-e);</span><br><span class="line">                &#125;</span><br><span class="line">                upstream.request(e);</span><br><span class="line">                e = <span class="number">0L</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (e == r &amp;&amp; checkTerminated(done, q.isEmpty(), a)) &#123;</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">int</span> w = get();</span><br><span class="line">        <span class="keyword">if</span> (missed == w) &#123;</span><br><span class="line">            produced = e;</span><br><span class="line">            missed = addAndGet(-missed);</span><br><span class="line">            <span class="keyword">if</span> (missed == <span class="number">0</span>) &#123;</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            missed = w;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">final</span> <span class="keyword">boolean</span> <span class="title">checkTerminated</span><span class="params">(<span class="keyword">boolean</span> d, <span class="keyword">boolean</span> empty, Subscriber&lt;?&gt; a)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (cancelled) &#123;</span><br><span class="line">        clear();</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (d) &#123;</span><br><span class="line">        <span class="keyword">if</span> (delayError) &#123;</span><br><span class="line">            <span class="keyword">if</span> (empty) &#123;</span><br><span class="line">                cancelled = <span class="keyword">true</span>;</span><br><span class="line">                Throwable e = error;</span><br><span class="line">                <span class="keyword">if</span> (e != <span class="keyword">null</span>) &#123;</span><br><span class="line">                    a.onError(e);</span><br><span class="line">                &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                    a.onComplete();</span><br><span class="line">                &#125;</span><br><span class="line">                worker.dispose();</span><br><span class="line">                <span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            Throwable e = error;</span><br><span class="line">            <span class="keyword">if</span> (e != <span class="keyword">null</span>) &#123;</span><br><span class="line">                cancelled = <span class="keyword">true</span>;</span><br><span class="line">                clear();</span><br><span class="line">                a.onError(e);</span><br><span class="line">                worker.dispose();</span><br><span class="line">                <span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">            &#125; <span class="keyword">else</span></span><br><span class="line">            <span class="keyword">if</span> (empty) &#123;</span><br><span class="line">                cancelled = <span class="keyword">true</span>;</span><br><span class="line">                a.onComplete();</span><br><span class="line">                worker.dispose();</span><br><span class="line">                <span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">false</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>执行流程基本与<code>ObservableObserveOn</code>相同, 这里不再赘述.<br>可以注意到, 当<code>done</code>为true并且<code>error</code>不为空的时候, 会调用到下流的<code>onError</code>, 最终是抛出<code>MissingBackpressureException</code>异常<br>大概的流程图可参考下图<img src="./process.jpg" alt="流程图"></p>
+<h2 id="背压策略"><a href="#背压策略" class="headerlink" title="背压策略"></a>背压策略</h2><p>Emitter的类图如下<img src="./emitterUML.png" alt="emitterUML"></p>
+<h3 id="BaseEmitter"><a href="#BaseEmitter" class="headerlink" title="BaseEmitter"></a>BaseEmitter</h3><p>我们首先看下<code>BaseEmitter</code>, 它是一个抽象类, 由于继承<code>AtomicLong</code>, 所以本身可维护下流缓存阈值, 而他内部维护的<code>downsteam</code>表示的是下流的<code>Subscriber</code>, 在本文的demo中, 它就是<code>SubscribeOnSubscriber</code>对象, 他的内部还实现了<code>request(long n)</code>方法, 这个方法主要是设置内部的缓存允许阈值, 详细代码我们再上文有带到.</p>
+<h3 id="NoOverflowBaseAsyncEmitter"><a href="#NoOverflowBaseAsyncEmitter" class="headerlink" title="NoOverflowBaseAsyncEmitter"></a>NoOverflowBaseAsyncEmitter</h3><p><code>NoOverflowBaseAsyncEmitter</code>继承于<code>BaseEmitter</code>, 并覆写了onNext, 这里的代码也比较容易理解, 在缓存大小允许范围内发送数据, 则直接发送, 并计数-1, 否则调用<code>onOverflow</code>抽象方法, 可以看出<code>onOverflow</code>就是出现背压情况时候的实际处理策略<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">abstract</span> <span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">NoOverflowBaseAsyncEmitter</span>&lt;<span class="title">T</span>&gt; <span class="keyword">extends</span> <span class="title">BaseEmitter</span>&lt;<span class="title">T</span>&gt; </span>&#123;</span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">void</span> <span class="title">onNext</span><span class="params">(T t)</span> </span>&#123;</span><br><span class="line">            <span class="keyword">if</span> (isCancelled()) &#123;</span><br><span class="line">                <span class="keyword">return</span>;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            ...</span><br><span class="line"></span><br><span class="line">            <span class="keyword">if</span> (get() != <span class="number">0</span>) &#123;</span><br><span class="line">                downstream.onNext(t);</span><br><span class="line">                <span class="comment">// 阈值-1</span></span><br><span class="line">                BackpressureHelper.produced(<span class="keyword">this</span>, <span class="number">1</span>);</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                onOverflow();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// 超出阈值情况处理</span></span><br><span class="line">        <span class="function"><span class="keyword">abstract</span> <span class="keyword">void</span> <span class="title">onOverflow</span><span class="params">()</span></span>;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure></p>
+<h3 id="ErrorAsyncEmitter"><a href="#ErrorAsyncEmitter" class="headerlink" title="ErrorAsyncEmitter"></a>ErrorAsyncEmitter</h3><p><code>ErrorAsyncEmitter</code>继承于<code>NoOverflowBaseAsyncEmitter</code>, 当出现背压情况的时候, 则直接调用<code>onError</code>, 抛出<code>MissingBackpressureException</code>异常<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="keyword">final</span> <span class="class"><span class="keyword">class</span> <span class="title">ErrorAsyncEmitter</span>&lt;<span class="title">T</span>&gt; <span class="keyword">extends</span> <span class="title">NoOverflowBaseAsyncEmitter</span>&lt;<span class="title">T</span>&gt; </span>&#123;</span><br><span class="line">        ...</span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">void</span> <span class="title">onOverflow</span><span class="params">()</span> </span>&#123;</span><br><span class="line">            onError(<span class="keyword">new</span> MissingBackpressureException(<span class="string">"create: could not emit value due to lack of requests"</span>));</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure></p>
+<h3 id="DropAsyncEmitter"><a href="#DropAsyncEmitter" class="headerlink" title="DropAsyncEmitter"></a>DropAsyncEmitter</h3><p><code>DropAsyncEmitter</code>继承于<code>NoOverflowBaseAsyncEmitter</code>, 背压策略不做任务处理, 则当超出缓存允许大小的时候, 对应的发送数据就不会再调用到下流的响应事件, 相当于drop<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="keyword">final</span> <span class="class"><span class="keyword">class</span> <span class="title">DropAsyncEmitter</span>&lt;<span class="title">T</span>&gt; <span class="keyword">extends</span> <span class="title">NoOverflowBaseAsyncEmitter</span>&lt;<span class="title">T</span>&gt; </span>&#123;</span><br><span class="line"></span><br><span class="line">        ...</span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">void</span> <span class="title">onOverflow</span><span class="params">()</span> </span>&#123;</span><br><span class="line">            <span class="comment">// nothing to do</span></span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure></p>
+<h3 id="LatestAsyncEmitter"><a href="#LatestAsyncEmitter" class="headerlink" title="LatestAsyncEmitter"></a>LatestAsyncEmitter</h3><p>它的内部维护了一个<code>AtomicReference</code>的<code>queue</code>, 可以理解为其自身的缓存池, 而这个池只有一个内存大小, 它在调用到<code>onNext</code>方法的时候, 将发送的数据存入<code>queue</code>, 并调用<code>drain</code>, 我们主要看下<code>drain</code>方法<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">drain</span><span class="params">()</span> </span>&#123;</span><br><span class="line">            <span class="comment">// 省略保证线程安全相关代码</span></span><br><span class="line">            ...</span><br><span class="line">            <span class="keyword">final</span> Subscriber&lt;? <span class="keyword">super</span> T&gt; a = downstream;</span><br><span class="line">            <span class="keyword">final</span> AtomicReference&lt;T&gt; q = queue;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">for</span> (;;) &#123;</span><br><span class="line">                <span class="keyword">long</span> r = get();</span><br><span class="line">                <span class="keyword">long</span> e = <span class="number">0L</span>;</span><br><span class="line"></span><br><span class="line">                <span class="keyword">while</span> (e != r) &#123;</span><br><span class="line">                    <span class="keyword">if</span> (isCancelled()) &#123;</span><br><span class="line">                        q.lazySet(<span class="keyword">null</span>);</span><br><span class="line">                        <span class="keyword">return</span>;</span><br><span class="line">                    &#125;</span><br><span class="line"></span><br><span class="line">                    <span class="keyword">boolean</span> d = done;</span><br><span class="line"></span><br><span class="line">                    T o = q.getAndSet(<span class="keyword">null</span>);</span><br><span class="line"></span><br><span class="line">                    <span class="keyword">boolean</span> empty = o == <span class="keyword">null</span>;</span><br><span class="line"></span><br><span class="line">                    <span class="keyword">if</span> (d &amp;&amp; empty) &#123;</span><br><span class="line">                        Throwable ex = error;</span><br><span class="line">                        <span class="keyword">if</span> (ex != <span class="keyword">null</span>) &#123;</span><br><span class="line">                            error(ex);</span><br><span class="line">                        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                            complete();</span><br><span class="line">                        &#125;</span><br><span class="line">                        <span class="keyword">return</span>;</span><br><span class="line">                    &#125;</span><br><span class="line"></span><br><span class="line">                    <span class="keyword">if</span> (empty) &#123;</span><br><span class="line">                        <span class="keyword">break</span>;</span><br><span class="line">                    &#125;</span><br><span class="line"></span><br><span class="line">                    a.onNext(o);</span><br><span class="line"></span><br><span class="line">                    e++;</span><br><span class="line">                &#125;</span><br><span class="line"></span><br><span class="line">                <span class="keyword">if</span> (e == r) &#123;</span><br><span class="line">                    <span class="keyword">if</span> (isCancelled()) &#123;</span><br><span class="line">                        q.lazySet(<span class="keyword">null</span>);</span><br><span class="line">                        <span class="keyword">return</span>;</span><br><span class="line">                    &#125;</span><br><span class="line"></span><br><span class="line">                    <span class="keyword">boolean</span> d = done;</span><br><span class="line"></span><br><span class="line">                    <span class="keyword">boolean</span> empty = q.get() == <span class="keyword">null</span>;</span><br><span class="line"></span><br><span class="line">                    <span class="keyword">if</span> (d &amp;&amp; empty) &#123;</span><br><span class="line">                        Throwable ex = error;</span><br><span class="line">                        <span class="keyword">if</span> (ex != <span class="keyword">null</span>) &#123;</span><br><span class="line">                            error(ex);</span><br><span class="line">                        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                            complete();</span><br><span class="line">                        &#125;</span><br><span class="line">                        <span class="keyword">return</span>;</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line"></span><br><span class="line">                <span class="keyword">if</span> (e != <span class="number">0</span>) &#123;</span><br><span class="line">                    BackpressureHelper.produced(<span class="keyword">this</span>, e);</span><br><span class="line">                &#125;</span><br><span class="line"></span><br><span class="line">                ...</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br></pre></td></tr></table></figure></p>
+<p>我们可以看到, 它在内部缓存阈值允许范围内, 会遍历读取<code>queue</code>的数据, 并将其发送给下流,当然这里<code>queue</code>的缓存大小也只有一个, 所以才会出现消费的最后一个数据会是上流发送的最后一个数据</p>
+<h3 id="BufferAsyncEmitter"><a href="#BufferAsyncEmitter" class="headerlink" title="BufferAsyncEmitter"></a>BufferAsyncEmitter</h3><p><code>BufferAsyncEmitter</code>内部维护了一个128大小的<code>SpscLinkedArrayQueue</code>缓存队列, <code>SpscLinkedArrayQueue</code>我们在<code>ObserveOnObserver</code>中见过, 他在存入数据的时候, 当达到队列最大长度的时候, 会进行扩容处理, 而通过<code>BufferAsyncEmitter</code>每次发送数据的时候, 首先会存入到<code>queue</code>中, 然后调用<code>drain</code>, 这里的代码与<code>LatestAsyncEmitter</code>也很相似, 区别只在于缓冲区的区别, 而当缓存区一再扩容的时候, 有可能出现OOM的现象, 他的逻辑其实与<code>ObserveOnObserver</code>内的消费逻辑是一样的<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">drain</span><span class="params">()</span> </span>&#123;</span><br><span class="line">            ...</span><br><span class="line">            <span class="keyword">final</span> Subscriber&lt;? <span class="keyword">super</span> T&gt; a = downstream;</span><br><span class="line">            <span class="keyword">final</span> SpscLinkedArrayQueue&lt;T&gt; q = queue;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">for</span> (;;) &#123;</span><br><span class="line">                <span class="keyword">long</span> r = get();</span><br><span class="line">                <span class="keyword">long</span> e = <span class="number">0L</span>;</span><br><span class="line"></span><br><span class="line">                <span class="keyword">while</span> (e != r) &#123;</span><br><span class="line">                    <span class="keyword">if</span> (isCancelled()) &#123;</span><br><span class="line">                        q.clear();</span><br><span class="line">                        <span class="keyword">return</span>;</span><br><span class="line">                    &#125;</span><br><span class="line"></span><br><span class="line">                    <span class="keyword">boolean</span> d = done;</span><br><span class="line"></span><br><span class="line">                    T o = q.poll();</span><br><span class="line"></span><br><span class="line">                    <span class="keyword">boolean</span> empty = o == <span class="keyword">null</span>;</span><br><span class="line"></span><br><span class="line">                    <span class="keyword">if</span> (d &amp;&amp; empty) &#123;</span><br><span class="line">                        Throwable ex = error;</span><br><span class="line">                        <span class="keyword">if</span> (ex != <span class="keyword">null</span>) &#123;</span><br><span class="line">                            error(ex);</span><br><span class="line">                        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                            complete();</span><br><span class="line">                        &#125;</span><br><span class="line">                        <span class="keyword">return</span>;</span><br><span class="line">                    &#125;</span><br><span class="line"></span><br><span class="line">                    <span class="keyword">if</span> (empty) &#123;</span><br><span class="line">                        <span class="keyword">break</span>;</span><br><span class="line">                    &#125;</span><br><span class="line"></span><br><span class="line">                    a.onNext(o);</span><br><span class="line"></span><br><span class="line">                    e++;</span><br><span class="line">                &#125;</span><br><span class="line"></span><br><span class="line">                <span class="keyword">if</span> (e == r) &#123;</span><br><span class="line">                    <span class="keyword">if</span> (isCancelled()) &#123;</span><br><span class="line">                        q.clear();</span><br><span class="line">                        <span class="keyword">return</span>;</span><br><span class="line">                    &#125;</span><br><span class="line"></span><br><span class="line">                    <span class="keyword">boolean</span> d = done;</span><br><span class="line"></span><br><span class="line">                    <span class="keyword">boolean</span> empty = q.isEmpty();</span><br><span class="line"></span><br><span class="line">                    <span class="keyword">if</span> (d &amp;&amp; empty) &#123;</span><br><span class="line">                        Throwable ex = error;</span><br><span class="line">                        <span class="keyword">if</span> (ex != <span class="keyword">null</span>) &#123;</span><br><span class="line">                            error(ex);</span><br><span class="line">                        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                            complete();</span><br><span class="line">                        &#125;</span><br><span class="line">                        <span class="keyword">return</span>;</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line"></span><br><span class="line">                <span class="keyword">if</span> (e != <span class="number">0</span>) &#123;</span><br><span class="line">                    BackpressureHelper.produced(<span class="keyword">this</span>, e);</span><br><span class="line">                &#125;</span><br><span class="line"></span><br><span class="line">                ...</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br></pre></td></tr></table></figure></p>
+<h2 id="背压总结"><a href="#背压总结" class="headerlink" title="背压总结"></a>背压总结</h2><p>我们再回头看下, 几种背压策略的效果</p>
+<table>
+<thead>
+<tr>
+<th>策略</th>
+<th>效果</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>MISSING</td>
+<td>无任何背压策略执行, 除非调用<code>onBackpressureXXX</code></td>
+</tr>
+<tr>
+<td>ERROR</td>
+<td>抛出异常</td>
+</tr>
+<tr>
+<td>BUFFER</td>
+<td>内部维护可扩容的缓存池, 效果与<code>Observer</code>一样, 可能导致OOM</td>
+</tr>
+<tr>
+<td>DROP</td>
+<td>如果下流无法跟上上流发射速度, 则会丢弃这块数据</td>
+</tr>
+<tr>
+<td>LATEST</td>
+<td>当下流无法跟上上流的发射速度的时候, 则只保存最近生产的数据</td>
+</tr>
+</tbody>
+</table>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/源码解析/" rel="tag"># 源码解析</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/12/12/Android基础-Handler源码/" rel="next" title="Android基础-Handler源码">
+                <i class="fa fa-chevron-left"></i> Android基础-Handler源码
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zMjcwMC85MjYx"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.png"
+               alt="天晴日无风" />
+          <p class="site-author-name" itemprop="name">天晴日无风</p>
+           
+              <p class="site-description motion-element" itemprop="description">开发笔记</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">23</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">6</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">15</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/YuTianTina" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                    
+                      GitHub
+                    
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#什么是背压-Backpressure"><span class="nav-number">1.</span> <span class="nav-text">什么是背压(Backpressure)?</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Observable-Observer"><span class="nav-number">2.</span> <span class="nav-text">Observable / Observer</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Flowable-Subscriber"><span class="nav-number">3.</span> <span class="nav-text">Flowable / Subscriber</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#订阅响应流程"><span class="nav-number">3.1.</span> <span class="nav-text">订阅响应流程</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#背压策略"><span class="nav-number">4.</span> <span class="nav-text">背压策略</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#BaseEmitter"><span class="nav-number">4.1.</span> <span class="nav-text">BaseEmitter</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#NoOverflowBaseAsyncEmitter"><span class="nav-number">4.2.</span> <span class="nav-text">NoOverflowBaseAsyncEmitter</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#ErrorAsyncEmitter"><span class="nav-number">4.3.</span> <span class="nav-text">ErrorAsyncEmitter</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#DropAsyncEmitter"><span class="nav-number">4.4.</span> <span class="nav-text">DropAsyncEmitter</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#LatestAsyncEmitter"><span class="nav-number">4.5.</span> <span class="nav-text">LatestAsyncEmitter</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#BufferAsyncEmitter"><span class="nav-number">4.6.</span> <span class="nav-text">BufferAsyncEmitter</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#背压总结"><span class="nav-number">5.</span> <span class="nav-text">背压总结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy;  2017 - 
+  <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">天晴日无风</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Pisces
+  </a>
+</div>
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script><!-- hexo-inject:begin --><!-- Begin: Injected MathJax -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({"tex2jax":{"inlineMath":[["$","$"],["\\(","\\)"]],"skipTags":["script","noscript","style","textarea","pre","code"],"processEscapes":true},"TeX":{"equationNumbers":{"autoNumber":"AMS"}}});
+</script>
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Queue(function() {
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i=0; i < all.length; i += 1) {
+      all[i].SourceElement().parentNode.className += ' has-jax';
+    }
+  });
+</script>
+
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js">
+</script>
+<!-- End: Injected MathJax -->
+<!-- hexo-inject:end -->
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+
+  
+
+  
+
+</body>
+</html>
