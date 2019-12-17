@@ -2,6 +2,13 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
+    <loc>//litten.me/2019/12/17/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84-LinkedHashMap/</loc>
+    
+    <lastmod>2019-12-17T08:52:23.797Z</lastmod>
+    
+  </url>
+  
+  <url>
     <loc>//litten.me/2019/09/20/%E5%9F%BA%E4%BA%8ELiveData%E5%AE%9E%E7%8E%B0%E4%BA%8B%E4%BB%B6%E6%80%BB%E7%BA%BF%E6%80%9D%E8%B7%AF%E5%92%8C%E6%96%B9%E6%A1%88/</loc>
     
     <lastmod>2019-09-20T09:46:04.126Z</lastmod>
@@ -198,14 +205,14 @@
   </url>
   
   <url>
-    <loc>//litten.me/categories/index.html</loc>
+    <loc>//litten.me/articles/index.html</loc>
     
     <lastmod>2018-05-03T09:24:18.000Z</lastmod>
     
   </url>
   
   <url>
-    <loc>//litten.me/articles/index.html</loc>
+    <loc>//litten.me/categories/index.html</loc>
     
     <lastmod>2018-05-03T09:24:18.000Z</lastmod>
     
