@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="android," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/avatar.png?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="前言MVC, MVP, MVVM 三种架构思想, 我想每个开发者应该都或多或少接触过, 本篇主要阐述下个人对MVVM的理解, 以及其在Android工程中的应用和实践">
+<meta name="keywords" content="android">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MVVM演进与实践">
+<meta property="og:url" content="//litten.me/2020/06/18/MVVM演进与实践/index.html">
+<meta property="og:site_name" content="天晴日无风">
+<meta property="og:description" content="前言MVC, MVP, MVVM 三种架构思想, 我想每个开发者应该都或多或少接触过, 本篇主要阐述下个人对MVVM的理解, 以及其在Android工程中的应用和实践">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="//litten.me/2020/06/18/MVVM演进与实践/MVVM.png">
+<meta property="og:image" content="//litten.me/2020/06/18/MVVM演进与实践/final-architecture.png">
+<meta property="og:updated_time" content="2020-08-14T02:49:18.653Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="MVVM演进与实践">
+<meta name="twitter:description" content="前言MVC, MVP, MVVM 三种架构思想, 我想每个开发者应该都或多或少接触过, 本篇主要阐述下个人对MVVM的理解, 以及其在Android工程中的应用和实践">
+<meta name="twitter:image" content="//litten.me/2020/06/18/MVVM演进与实践/MVVM.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="//litten.me/2020/06/18/MVVM演进与实践/"/>
+
+
+
+
+
+  <title>MVVM演进与实践 | 天晴日无风</title>
+  
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//tajs.qq.com/stats?sId=64926000";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">天晴日无风</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">燃烧了一颗恒星来相见</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="//litten.me/2020/06/18/MVVM演进与实践/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="天晴日无风">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="天晴日无风">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">MVVM演进与实践</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-06-18T00:00:00+08:00">
+                2020-06-18
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/android学习记录/" itemprop="url" rel="index">
+                    <span itemprop="name">android学习记录</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>MVC, MVP, MVVM 三种架构思想, 我想每个开发者应该都或多或少接触过, 本篇主要阐述下个人对MVVM的理解, 以及其在Android工程中的应用和实践<br><a id="more"></a></p>
+<h3 id="MVP"><a href="#MVP" class="headerlink" title="MVP"></a>MVP</h3><p>首先, 我们理解下在过去的几年内, 常用到的<code>MVP</code>(Model - View - Presenter)架构思想.<br>MVP是由MVC演进而来, 整体架构可以分为三层</p>
+<ul>
+<li>Model(数据层) 在良好的分层项目中, 它主要负责API数据, 缓存数据等的管理</li>
+<li>View(视图层) 负责视图的显示与处理, 在Android中, 常常是通过Activity/Fragment来处理相关实现, 并持有Presenter的引用</li>
+<li>Presenter 负责连接<code>Model</code>层和<code>View</code>层, 负责业务逻辑的处理. 在Android中, 它需要持有<code>Modle</code>与<code>View</code>的引用, <code>View</code>通过调用<code>Presenter</code>的方法, 去执行相应的业务逻辑处理, 而<code>Presenter</code>的内部通过获取Model的数据并将其转换提供给<code>View</code>, 另外<code>View</code>的交互的触发, 通常是由<code>Presenter</code>来决定的.</li>
+</ul>
+<p>由此可见, 我们在以<code>MVP</code>架构来开发的时候, 常常是需要通过UI和事件为驱动去执行相应的逻辑变更, 同时, <code>Presenter</code>以及<code>View</code>在触发到相应的交互变更时, 需要考虑到Activity或者Fragment的生命周期</p>
+<h3 id="MVVM"><a href="#MVVM" class="headerlink" title="MVVM"></a>MVVM</h3><p>我们来看下<code>MVVM</code>模式的主要成员</p>
+<ul>
+<li>Model Model与MVP模式中的Model没有什么区别, 仍然负责相关数据处理</li>
+<li>View 仍然负责视图交互的处理, 订阅<code>ViewModel</code>的相关数据流并触发相应的交互事件, </li>
+<li>ViewModel 负责业务逻辑的同时, 公开与<code>View</code>的相关观测事件数据流</li>
+</ul>
+<p>可以发现<code>MVP</code>和<code>MVVM</code>在分层上, 还是很相似的, <code>View</code>均需要抽象视图体现, <code>Presenter</code>与<code>ViewModel</code>均需要处理业务逻辑, 比较明显的不同是, <code>Presenter</code>仍需要持有<code>View</code>以此直接指定相应的交互体现, 而<code>ViewModel</code>是通过发布<code>View</code>绑定的事件流, 由<code>View</code>自行观测并触发交互, 它并不关心是谁观测这个事件流或做出怎样的交互, 而因此, 在Android中, <code>ViewModel</code>不应该再关注<code>View</code>的生命周期</p>
+<p>相关的示意图可看下图</p>
+<p><img src="./MVVM.png" alt="MVVM"></p>
+<p>然后我们看下MVVM在Android工程中的推荐分层实践<br><img src="./final-architecture.png" alt="final-architecture"></p>
+<h4 id="MVVM核心思想"><a href="#MVVM核心思想" class="headerlink" title="MVVM核心思想"></a>MVVM核心思想</h4><p>在Google推荐的官方文档中, MVVM区别于其他架构, 它的核心思想是 数据驱动UI(即模型驱动视图), 这里的数据, 官方比较推荐的做法是, 将持久化数据设置为我们的单一可信来源, 如果配合JetPack来开发, 那么梳理下来的流程,就应该是</p>
+<ol>
+<li>Room提供数据单一可信任来源, View通过VM拿到相关数据, 并对它进行观测</li>
+<li>而当View需要通过VM调用请求接口的时候, VM通知给到M, M进行请求并将数据更新进Room, 由此触发到View的更新</li>
+</ol>
+<h4 id="MVVM-工程内实践"><a href="#MVVM-工程内实践" class="headerlink" title="MVVM 工程内实践"></a>MVVM 工程内实践</h4><p>但是在实际的开发工程中, 我们往往是没有一个明确的M界限, 常见的开发场景是将数据相关逻辑均写在VM层(或者P层), 在<code>MVVMArch</code>Demo工程中, 我们摒弃了通过DataBind来实现V对VM的绑定, DI的使用, 以及基于我们当前对数据的操作, 摒弃了对Repostory分层的处理, 这样我们更加聚焦在如何掌握<code>数据驱动UI</code>的思想</p>
+<p>下例我们看一个常见的, 具备分页功能的列表页面的实现方式</p>
+<p>这里我们有几个注意的点</p>
+<ul>
+<li>对应列表页面, 他需要观测的数据是什么? <ul>
+<li>对于页面来说, 他需要观测的数据应是当前所有展示的数据, 而不是每页请求后的单页数据, 如果通过VM获取到每页数据去进行订阅, 那是毫无意义的. 由此在Adapter中, 我们应该摒弃掉过往针对单页数据进行通知变更的行为逻辑, 改为使用DiffUtil去观测数据的变更, 以此通知到相应item行为触发</li>
+</ul>
+</li>
+<li>VM怎么通知到View触发下拉刷新/加载等loading的动效?<ul>
+<li>由于VM的生命周期独立于Activity/Fragment的, 所以VM本身是不宜持有Activity/Fragment, 通过暴露响应的观测数据, 给到Activity/Fragment进行订阅监测, 以此达到触发loading等的view变更</li>
+</ul>
+</li>
+<li>暴露给V的LiveData<ul>
+<li>MutableLiveData是可变的, 就是交由使用者去发送数据, 而V不不应该保留对数据变更的权限, 由此VM暴露的LiveData是需要处理一下</li>
+</ul>
+</li>
+</ul>
+<figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">HomeFragment</span> : <span class="type">BaseFragment</span></span>() &#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">val</span> vm <span class="keyword">by</span> inject(HomeViewModel::<span class="class"><span class="keyword">class</span>.<span class="title">java</span>)</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">val</span> mAdapter <span class="keyword">by</span> lazy &#123; AdapterHome() &#125;</span><br><span class="line">    <span class="keyword">override</span> <span class="function"><span class="keyword">fun</span> <span class="title">layoutId</span><span class="params">()</span></span>: <span class="built_in">Int</span> = R.layout.fragment_home</span><br><span class="line"></span><br><span class="line">    <span class="keyword">override</span> <span class="function"><span class="keyword">fun</span> <span class="title">renderView</span><span class="params">(rootView: <span class="type">View</span>)</span></span> &#123;</span><br><span class="line">        <span class="comment">// refresh 初始化</span></span><br><span class="line">        rootView.findViewById&lt;SmartRefreshLayout&gt;(R.id.fragment_home_refresh).apply &#123;</span><br><span class="line">            setOnRefreshListener &#123; vm.refresh() &#125;</span><br><span class="line">            setOnLoadMoreListener &#123; vm.loadMore() &#125;</span><br><span class="line"></span><br><span class="line">            vm.loadingStatus.observe(<span class="keyword">this</span><span class="symbol">@HomeFragment</span>, Observer &#123;</span><br><span class="line">                <span class="keyword">if</span>(it.loadingSusscess)&#123;</span><br><span class="line">                    <span class="keyword">if</span>(isRefreshing)&#123;</span><br><span class="line">                        finishRefresh()</span><br><span class="line">                    &#125;</span><br><span class="line">                    <span class="keyword">if</span>(isLoading)&#123;</span><br><span class="line">                        finishLoadMore()</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">                setEnableLoadMore(it.hasMore)</span><br><span class="line"></span><br><span class="line">                it.errorMsg?.let &#123; errorMsg -&gt;</span><br><span class="line">                    Toast.makeText(context, errorMsg, Toast.LENGTH_SHORT).show()</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;)</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// recyclerview初始化</span></span><br><span class="line">        initRecyclerView(rootView)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="function"><span class="keyword">fun</span> <span class="title">initRecyclerView</span><span class="params">(rootView: <span class="type">View</span>)</span></span>&#123;</span><br><span class="line">        rootView.findViewById&lt;RecyclerView&gt;(R.id.fragment_home_rv).apply &#123;</span><br><span class="line">            addItemDecoration(DividerItemDecoration(context, DividerItemDecoration.HORIZONTAL))</span><br><span class="line">            layoutManager = LinearLayoutManager(context)</span><br><span class="line">            adapter = mAdapter</span><br><span class="line">        &#125;</span><br><span class="line">        vm.result.observe(<span class="keyword">this</span>, Observer &#123;</span><br><span class="line">            mAdapter.submitList(it)</span><br><span class="line">        &#125;)</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>VM层的处理<br><figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">HomeViewModel</span></span>(application: Application) : BaseViewModel(application) &#123;</span><br><span class="line">    <span class="keyword">val</span> _result = MutableLiveData&lt;ArrayList&lt;ArticleEntity&gt;&gt;()</span><br><span class="line">    <span class="keyword">val</span> result : LiveData&lt;ArrayList&lt;ArticleEntity&gt;&gt; = _result</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">val</span> loadDataHandler = LoadDataHandler(getApplication&lt;BaseApplication&gt;().mRetrofit.create(ApiService::<span class="class"><span class="keyword">class</span>.<span class="title">java</span>),<span class="type"></span></span></span><br><span class="line">        _result)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    <span class="keyword">val</span> loadingStatus = loadDataHandler.loadingStatus</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 刷新</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">fun</span> <span class="title">refresh</span><span class="params">()</span></span>&#123;</span><br><span class="line">        loadDataHandler.loadData(<span class="literal">true</span>)</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 加载更多</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">fun</span> <span class="title">loadMore</span><span class="params">()</span></span>&#123;</span><br><span class="line">        loadDataHandler.loadData(<span class="literal">false</span>)</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="class"><span class="keyword">class</span> <span class="title">LoadDataHandler</span></span>(</span><br><span class="line">        <span class="keyword">val</span> apiService: ApiService,</span><br><span class="line">        <span class="keyword">val</span> _result: MutableLiveData&lt;ArrayList&lt;ArticleEntity&gt;&gt;</span><br><span class="line">    ) :</span><br><span class="line">        Observer&lt;ApiResponse&lt;BaseEntity&lt;PageEntity&lt;ArticleEntity&gt;&gt;&gt;&gt; &#123;</span><br><span class="line">        <span class="keyword">private</span> <span class="keyword">var</span> mPageData : LiveData&lt;ApiResponse&lt;BaseEntity&lt;PageEntity&lt;ArticleEntity&gt;&gt;&gt;&gt;? = <span class="literal">null</span></span><br><span class="line">        <span class="keyword">private</span> <span class="keyword">var</span> pageNo = <span class="number">0</span></span><br><span class="line"></span><br><span class="line">        <span class="keyword">val</span> loadingStatus = MutableLiveData&lt;LoadingState&gt;()</span><br><span class="line">        init &#123;</span><br><span class="line">            reset()</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="function"><span class="keyword">fun</span> <span class="title">reset</span><span class="params">()</span></span>&#123;</span><br><span class="line">            pageNo = <span class="number">0</span></span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="function"><span class="keyword">fun</span> <span class="title">loadData</span><span class="params">(shouldReset : <span class="type">Boolean</span>)</span></span>&#123;</span><br><span class="line">            <span class="keyword">if</span>(shouldReset)&#123;</span><br><span class="line">                reset()</span><br><span class="line">            &#125;</span><br><span class="line">            mPageData = apiService.fetchArticleList(pageNo)</span><br><span class="line">            mPageData?.observeForever(<span class="keyword">this</span>)</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">        <span class="function"><span class="keyword">fun</span> <span class="title">unregister</span><span class="params">()</span></span>&#123;</span><br><span class="line">            mPageData?.removeObserver(<span class="keyword">this</span>)</span><br><span class="line">            mPageData = <span class="literal">null</span></span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">override</span> <span class="function"><span class="keyword">fun</span> <span class="title">onChanged</span><span class="params">(t: <span class="type">ApiResponse</span>&lt;<span class="type">BaseEntity</span>&lt;<span class="type">PageEntity</span>&lt;<span class="type">ArticleEntity</span>&gt;&gt;&gt;?)</span></span> &#123;</span><br><span class="line">            <span class="keyword">when</span>(t)&#123;</span><br><span class="line">                <span class="keyword">is</span> ApiSuccessResponse -&gt; &#123;</span><br><span class="line">                    pageNo = t.body.<span class="keyword">data</span>.curPage</span><br><span class="line">                    <span class="keyword">if</span>(<span class="number">1</span> == pageNo)&#123;</span><br><span class="line">                        _result.value = t.body.<span class="keyword">data</span>.datas</span><br><span class="line">                    &#125;<span class="keyword">else</span>&#123;</span><br><span class="line">                        _result += t.body.<span class="keyword">data</span>.datas</span><br><span class="line">                    &#125;</span><br><span class="line"></span><br><span class="line">                    loadingStatus.value = LoadingState(<span class="literal">true</span>, t.body.<span class="keyword">data</span>.curPage &lt; t.body.<span class="keyword">data</span>.pageCount)</span><br><span class="line">                    unregister()</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="keyword">is</span> ApiErrorResponse -&gt; &#123;</span><br><span class="line"></span><br><span class="line">                    loadingStatus.value = LoadingState(<span class="literal">true</span>, <span class="literal">false</span>, t.errorMsg)</span><br><span class="line"></span><br><span class="line">                    unregister()</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="keyword">is</span> ApiEmptyResponse -&gt; &#123;</span><br><span class="line">                    unregister()</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">data</span> <span class="class"><span class="keyword">class</span> <span class="title">LoadingState</span></span>(</span><br><span class="line">        <span class="keyword">var</span> loadingSusscess : <span class="built_in">Boolean</span>,</span><br><span class="line">        <span class="keyword">var</span> hasMore : <span class="built_in">Boolean</span>,</span><br><span class="line">        <span class="keyword">var</span> errorMsg : String? = <span class="literal">null</span></span><br><span class="line">    )</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h3 id="更多思考与讨论"><a href="#更多思考与讨论" class="headerlink" title="更多思考与讨论"></a>更多思考与讨论</h3><ul>
+<li>协程的使用</li>
+<li>Repostory的必要性</li>
+<li>DI与DataBinding的必要性</li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/android/" rel="tag"># android</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2020/04/21/Tinker源码解析-代码修复和资源修复/" rel="next" title="Tinker源码解析-代码修复和资源修复">
+                <i class="fa fa-chevron-left"></i> Tinker源码解析-代码修复和资源修复
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zMjcwMC85MjYx"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.png"
+               alt="天晴日无风" />
+          <p class="site-author-name" itemprop="name">天晴日无风</p>
+           
+              <p class="site-description motion-element" itemprop="description">开发笔记</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">30</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">7</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">17</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/YuTianTina" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                    
+                      GitHub
+                    
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#MVP"><span class="nav-number">1.1.</span> <span class="nav-text">MVP</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#MVVM"><span class="nav-number">1.2.</span> <span class="nav-text">MVVM</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#MVVM核心思想"><span class="nav-number">1.2.1.</span> <span class="nav-text">MVVM核心思想</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#MVVM-工程内实践"><span class="nav-number">1.2.2.</span> <span class="nav-text">MVVM 工程内实践</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#更多思考与讨论"><span class="nav-number">1.3.</span> <span class="nav-text">更多思考与讨论</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy;  2017 - 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">天晴日无风</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Pisces
+  </a>
+</div>
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script><!-- hexo-inject:begin --><!-- Begin: Injected MathJax -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({"tex2jax":{"inlineMath":[["$","$"],["\\(","\\)"]],"skipTags":["script","noscript","style","textarea","pre","code"],"processEscapes":true},"TeX":{"equationNumbers":{"autoNumber":"AMS"}}});
+</script>
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Queue(function() {
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i=0; i < all.length; i += 1) {
+      all[i].SourceElement().parentNode.className += ' has-jax';
+    }
+  });
+</script>
+
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js">
+</script>
+<!-- End: Injected MathJax -->
+<!-- hexo-inject:end -->
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+
+  
+
+  
+
+</body>
+</html>
